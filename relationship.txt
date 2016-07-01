@@ -1,0 +1,8 @@
+Flask-0.10.1 -> pip install flask
+Flask_Bootstrap-3.3.5.7 -> pip install flask-bootstrap
+Flask_Login-0.3.2 -> pip install flask-login
+Flask_SQLAlchemy-2.1 -> pip install flask-sqlalchemy
+Flask_WTF-0.12 -> pip install flask-wtf
+pyexcelerator-0.6.4.1.tar.bz2 -> pip install pyexcelerator
+PyMySQL-0.7.4 -> pip install pymysql
+sqlalchemy_migrate-0.10.0 -> pip install sqlalchemy-migrate

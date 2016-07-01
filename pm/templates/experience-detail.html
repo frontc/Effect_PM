@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block head %}
+    {{ super() }}
+    <link href="{{ url_for('static', filename='summernote.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static', filename='summernote.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='summernote-zh-CN.min.js') }}"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+        });
+    </script>
+{% endblock %}
+{% block page_content %}
+    <div class="panel panel-default">
+        <div class="panel-heading" id="title">
+            <h5>{{ exp.title|safe }}&nbsp;
+                <small>{{ exp.summary|safe }}</small>
+            </h5>
+        </div>
+        <div class="panel-body">
+            <div id="detail">{{ exp.detail|safe }}</div>
+        </div>
+        <div class="panel-footer small">
+            <a href="{{ exp.url|safe }}" target="_blank"><span class="glyphicon glyphicon-link"
+                                                               aria-hidden="true"></span></a>
+            &nbsp;
+            [{{ exp.type|safe }}]
+            <em><strong>{{ exp.create_person_id|safe }}</strong> 创建于 {{ exp.create_time|safe }}</em>
+            <em><strong>{{ exp.modify_person_id|safe }}</strong> 最近修改于 {{ exp.modify_time|safe }}</em>
+            <em>{{ exp.related_project_id|safe }}</em>
+            <em>{{ exp.related_application_id|safe }}</em>
+
+        </div>
+    </div>
+{% endblock %}

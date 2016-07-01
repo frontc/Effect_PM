@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+    <script src="{{ url_for('static',filename='bootstrap-datetimepicker.min.js') }}" charset="UTF-8"></script>
+    <link href="{{ url_for('static',filename='bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static',filename='bootstrap-datetimepicker.zh-CN.js') }}" charset="UTF-8"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(".form_datetime").datetimepicker({
+                format: 'yyyy-mm-dd',
+                minView: 2,
+                autoclose: true,
+                todayHighlight: true,
+                todayBtn: true,
+                language: 'zh-CN'
+            });
+            var todos;
+            $.getJSON($SCRIPT_ROOT + '/_get_overview_info', {}, function (data) {
+                $('#all_projects').text(data['all_projects']);
+                $('#on_projects').text(data['on_projects']);
+                $('#all_applications').text(data['all_applications']);
+                $('#on_applications').text(data['on_applications']);
+                $('#all_needs').text(data['all_needs']);
+                $('#on_needs').text(data['on_needs']);
+                $('#all_tasks').text(data['all_tasks']);
+                $('#on_tasks').text(data['on_tasks']);
+            });
+            function refresh() {
+                $.getJSON($SCRIPT_ROOT + '/_get_task_info', {}, function (data) {
+                    $('#todo_task_nums').text(data['todo_task_nums']);
+                    $('#done_task_nums').text(data['done_task_nums']);
+                    todos = data.todo_task_list;
+                    var dones = data.done_task_list;
+                    var todotable = "";
+                    var d = new Date();
+                    var vYear = d.getFullYear();
+                    var vMon = d.getMonth() + 1;
+                    var vDay = d.getDate();
+                    var clientDate = vYear+'-'+(vMon<10 ? "0" + vMon : vMon)+'-'+(vDay<10 ? "0"+ vDay : vDay);
+                    for (var loop in todos) {
+                        var trStyle='';
+                        //if(todos[loop]['plan_finish_time']>clientDate){
+                        //    trStyle='class="text-info"';
+                        //}else if(todos[loop]['plan_finish_time']==clientDate){
+                        //    trStyle='class="text-warning"';
+                        //}else{
+                        //    trStyle='class="text-danger"';
+                        //}
+                        todotable = todotable +
+                                "<tr id='" + todos[loop]['id'] + "' "+trStyle+ ">" +
+                                "<td><input type='checkbox'  data-toggle='modal' data-target='#myModal' data='" + loop + "'></td>" +
+                                "<td>" + todos[loop]['stage_name'] + " " + todos[loop]['task_name'] + " " + todos[loop]['task_detail'] + "</td>" +
+                                "<td>" + todos[loop]['plan_start_time'] + " ~ " + todos[loop]['plan_finish_time'] + "</td>" +
+                                "<td>" + todos[loop]['status'] + "</td>" +
+                                "<td>" + parseInt(todos[loop]['processing_progress'] * 100) + "%</td>" +
+                                "<td>" + todos[loop]['comment'] + "</td>" +
+                                "</tr>"
+                    }
+                    $('#todo_task_list').html(todotable)
+                    var donetable = "";
+                    for (var loop in dones) {
+                        donetable = donetable +
+                                "<tr id='" + dones[loop]['id'] + "'>" +
+                                "<td><input type='checkbox' disabled='true' ></td>" +
+                                "<td><del>" + dones[loop]['stage_name'] + " " + dones[loop]['task_name'] + " " + dones[loop]['task_detail'] + "</del></td>" +
+                                "<td><del>" + dones[loop]['plan_start_time'] + " ~ " + dones[loop]['plan_finish_time'] + "</del></td>" +
+                                "<td><del>" + dones[loop]['status'] + "</del></td>" +
+                                "<td><del>" + dones[loop]['processing_progress'] * 100 + "%</del></td>" +
+                                "<td><del>" + dones[loop]['comment'] + "</del></td>" +
+                                "</tr>"
+                    }
+                    $('#done_task_list').html(donetable)
+                });
+            }
+
+            refresh();
+            $('#myModal').on('shown.bs.modal', function (event) {
+                var checkbox = $(event.relatedTarget);
+                var loop = checkbox.attr('data');
+                var modal = $(this);
+                var status = todos[loop]['status'];
+                $("#modalStatusSelect").val(status);
+                $("#start_date_selector").val(todos[loop]['real_start_time']);
+                $("#finish_date_selector").val(todos[loop]['real_finish_time']);
+                modal.find('#taskProgess').val(parseInt(todos[loop]['processing_progress'] * 100));
+                modal.find('#taskID').val(todos[loop]['id']);
+                modal.find('#taskComment').val(todos[loop]['comment']);
+                modal.find('#modalTitle').text(todos[loop]['stage_name'] + " " + todos[loop]['task_name'] + " " + todos[loop]['task_detail'])
+            });
+            $('#submitButton').on('click', function () {
+                var statusSelect = $("#modalStatusSelect");
+                var finishDate = $('#finish_date_selector');
+                var startDate = $('#start_date_selector');
+                var taskProgress = $('#taskProgess');
+                var taskComment = $('#taskComment');
+                var taskID = $('#taskID');
+                if ((statusSelect.val() == '已完成') && (finishDate.val().length < 3)) {
+                    finishDate.addClass('alert-danger');
+                    return
+                }
+                if ((statusSelect.val() == '已完成') && (taskProgress.val() != 100)) {
+                    taskProgress.addClass('alert-danger');
+                    return
+                }
+                if ((statusSelect.val() == '未开始') && (startDate.val().length > 3)) {
+                    startDate.addClass('alert-danger');
+                    return
+                }
+                $.post($SCRIPT_ROOT + "/_update_task", JSON.stringify({
+                    id: taskID.val(),
+                    status: statusSelect.val(),
+                    progress: taskProgress.val(),
+                    startdate: startDate.val(),
+                    finishdate: finishDate.val(),
+                    comment: taskComment.val()
+                }), function (data) {
+                    if (data == 'ok') {
+                        $('#myModal').modal('hide');
+                        refresh();
+                    }
+                });
+            });
+            $('#done_div').on('click', function () {
+                if ($('#done_task_nums').text() > 0) {
+                    var done_task_list = $('#done_task_list');
+                    if (done_task_list.hasClass('hidden')) {
+                        done_task_list.removeClass('hidden');
+                    } else {
+                        done_task_list.addClass('hidden');
+                    }
+                }
+            });
+            $('#myModal').on('hidden.bs.modal', function (event) {
+                $("input:checkbox").attr("checked", false);
+            });
+            function getActivity(lines) {
+                $.post($SCRIPT_ROOT + "/_get_activity", JSON.stringify({limits: lines}), function (data) {
+                    var str = "";
+                    for (var o in data.result) {
+                        str = str + "<li class='list-group-item small'>" + data.result[o] + "</li>";
+                    }
+                    $('#activity_div').html(str);
+                });
+            }
+
+            getActivity(5);
+            $('#show_more_activity').on('click', function () {
+                if ($(this).hasClass('glyphicon-chevron-down')) {
+                    $(this).removeClass('glyphicon-chevron-down');
+                    getActivity(20);
+                    $(this).addClass('glyphicon-chevron-up');
+                } else {
+                    $(this).removeClass('glyphicon-chevron-up');
+                    getActivity(5);
+                    $(this).addClass('glyphicon-chevron-down');
+                }
+            });
+
+            $('#shareSubmitButton').on('click', function () {
+                $.post($SCRIPT_ROOT + '/_quick_add_share',
+                        JSON.stringify({
+                            title: $('#shareTitle').val(),
+                            summary: $('#shareSummary').val(),
+                            url: $('#shareUrl').val()
+                        }), function (data) {
+                            if (data == 'ok') {
+                                $('#shareModal').modal('hide');
+                            }
+                            getExperience(12);
+                        });
+            });
+            $('#show_share').click(function () {
+                location.href = '{{ url_for('experience') }}'
+            });
+            function getExperience(lines) {
+                $.post($SCRIPT_ROOT + "/_get_experience", JSON.stringify({limits: lines}), function (data) {
+                    for(var o in data.result){
+                        var str='<div class="row"><div class="col-sm-8 small pull-left">';
+                        if(data.result[o]['type']==1){
+                            str = str + '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>';
+                        }else{
+                            str = str + '<span class="glyphicon glyphicon-grain" aria-hidden="true"></span>';
+                        }
+                        str = str + '&nbsp;<a href="'+data.result[o]['url']+'" target="_blank">'+data.result[o]['title']+'</a> </div>';
+                        str = str + '<div class="col-sm-4 small pull-right"><em>- '+data.result[o]['user']+' '+data.result[o]['modify_time'];
+                        str = str + '</em></div><div class="col-sm-4 small pull-right"></div></div>'
+                        $('#share_content').append(str);
+                    }
+                });
+            }
+            getExperience(12);
+        })
+    </script>
+
+{% endblock %}
+{% block page_content %}
+    <div class="well well-sm">
+        <div class="row">
+            <div class="col-md-1"><strong>概览</strong></div>
+            <div class="col-md-2">项目 <code id="all_projects">-</code>/<code id="on_projects">-</code></div>
+            <div class="col-md-2">系统 <code id="all_applications">-</code>/<code id="on_applications">-</code></div>
+            <div class="col-md-2">需求 <code id="all_needs">-</code>/<code id="on_needs">-</code></div>
+            <div class="col-md-2">任务 <code id="all_tasks">-</code>/<code id="on_tasks">-</code></div>
+        </div>
+    </div>
+    <div class="panel panel-default small">
+        <div class="panel-heading"><h5>今日待办 <span class="badge" id="todo_task_nums">0</span></h5></div>
+        <table class="table" id="todo_task_list">
+        </table>
+        <div class="panel-footer" id="done_div"><strong id="done_task_nums">0</strong> 个已完成任务</div>
+        <table class="table hidden" id="done_task_list">
+        </table>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-sm-2"><strong>活动</strong></div>
+                        <div class="col-sm-10 text-right small"><span class="glyphicon glyphicon-chevron-down"
+                                                                      aria-hidden="true" id="show_more_activity"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body" id="activity_content">
+                    <ul class='list-group' id="activity_div">
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-sm-2"><strong>分享</strong></div>
+                        <div class="col-sm-10 text-right small">
+                            <span class="glyphicon glyphicon-plus" aria-hidden="true" data-toggle='modal'
+                                  data-target='#shareModal'></span>
+                            &nbsp;
+                            <span class="glyphicon glyphicon-new-window" aria-hidden="true" id="show_share"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body pre-scrollable" style="height: 241px;overflow-y: auto" id="share_content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="modalTitle">任务进展</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal small">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">任务状态</label>
+                            <div class="col-sm-3">
+                                <select class="form-control" id="modalStatusSelect">
+                                    {% for foo in task_status_choices %}
+                                        <option value="{{ foo[1] }}">{{ foo[1] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <label class="col-sm-2 control-label">执行进度</label>
+                            <div class="col-sm-3">
+                                <input type="number" class="form-control" id="taskProgess" placeholder="%">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">开始时间</label>
+                            <div class="col-sm-3">
+                                <input type="text" size="16" readonly class="form_datetime form-control"
+                                       id="start_date_selector">
+                            </div>
+                            <label class="col-sm-2 control-label">结束时间</label>
+                            <div class="col-sm-3">
+                                <input type="text" size="16" readonly class="form_datetime form-control"
+                                       id="finish_date_selector">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">备注</label>
+                            <div class="col-sm-8">
+                                <textarea class="form-control" rows="2" id="taskComment"></textarea>
+                            </div>
+                        </div>
+                        <input type="hidden" id="taskID" value="-1">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="submitButton">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="shareModal" tabindex="-1" role="dialog" aria-labelledby="shareModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="shareModalTitle">快速分享</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal small">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">标题</label>
+                            <div class="col-sm-9"><input type="text" class="form-control" id="shareTitle"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">简介</label>
+                            <div class="col-sm-9">
+                                <textarea class="form-control" rows="2" id="shareSummary"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">链接</label>
+                            <div class="col-sm-9"><input type="text" class="form-control" id="shareUrl"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="shareSubmitButton">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

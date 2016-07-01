@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block head %}
+    {{ super() }}
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $("#add_button").click(function(){
+                if ($("#add_form_div").hasClass("hidden"))
+                {
+                    $("#add_form_div").removeClass('hidden')
+                    $("#add_icon_span").removeClass("glyphicon-plus")
+                    $("#add_icon_span").addClass("glyphicon-minus")
+                }
+                else
+                {
+                    $("#add_form_div").removeClass('show')
+                    $("#add_form_div").addClass('hidden')
+                    $("#add_icon_span").removeClass("glyphicon-minus")
+                    $("#add_icon_span").addClass("glyphicon-plus")
+                }
+            });
+            $("#modify_button").click(function(){
+                if ($("#select_form_div").hasClass("hidden"))
+                {
+                    $("#select_form_div").removeClass('hidden')
+                }
+                else
+                {
+                    $("#select_form_div").removeClass('show')
+                    $("#select_form_div").addClass('hidden')
+                }
+            });
+
+        });
+     $(function() {
+    $('#project_selector').bind('change', function() {
+        if ($("#project_selector option:selected").val() == -1){
+            $("#modify_project_manager_selector").val(-1);
+            $("#modify_build_year").val("");
+            $("#modify_status_selector").val(-1);
+            return false
+        }
+      $.getJSON($SCRIPT_ROOT + '/_get_project_info', {
+        project_id: $("#project_selector option:selected").val()
+      }, function(data) {
+          $("#modify_project_name").val(data.result["project_name"]);
+          $("#modify_project_manager_selector").val(data.result["project_manager_id"]);
+          $("#modify_build_year").val(data.result["build_year"]);
+          $("#modify_status_selector").val(data.result["status"]);
+      });
+      return false;
+    });
+  });
+    </script>
+{% endblock %}
+{% block page_content %}
+    <div><button id='add_button' class="btn btn-default btn-sm"><span id="add_icon_span" class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+        <button id='modify_button' class="btn btn-default btn-sm"><span id="modify_icon_span" class="glyphicon glyphicon-pencil" aria-hidden="true"></span></button><br><br></div>
+    <div id='add_form_div' class="{{ atr }}">{{ wtf.quick_form(add_form) }}<br><br></div>
+    <div id="select_form_div" class="{{ atr }}" >
+    <form id="modify_form" method="post" action="{{  url_for('_modify_project') }}" name="modify_form">
+        <div class="form-group">
+            <label>项目</label>
+            <select  class="form-control" id="project_selector" name="modify_project_id">
+            <option value="-1">--请选择--</option>
+                {% for foo in project_choices %}
+                    <option value="{{ foo[0] }}">{{ foo[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>项目名称</label>
+            <input type="text" class="form-control" id="modify_project_name" name="modify_project_name">
+        </div>
+        <div class="form-group">
+            <label>项目负责人</label>
+            <select class="form-control" id="modify_project_manager_selector" name="modify_project_manager_selector">
+            <option value="-1">--请选择--</option>
+                {% for foo in user_choices %}
+                    <option value="{{ foo[0] }}">{{ foo[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>所属年份</label>
+            <input type="text" class="form-control" id="modify_build_year" name="modify_project_build_year">
+        </div>
+        <div class="form-group">
+            <label>状态</label>
+            <select class="form-control" id="modify_status_selector" name="modify_project_status">
+            <option value="-1">--请选择--</option>
+                {% for foo in status_choices %}
+                    <option value="{{ foo[0] }}">{{ foo[1] }}</option>
+                {% endfor %}
+            </select>
+
+
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-default" id="modify_btn">修改</button>
+        </div>
+    </form>
+        <br>
+        <br>
+    </div>
+    <div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">项目列表</h3>
+  </div>
+  <div class="panel-body ">
+    <table id="table" class="table table-hover table-condensed" >
+    <tr><td>#</td>
+        <td>项目名称</td>
+        <td>项目负责人</td>
+        <td>所属年份</td>
+        <td>状态</td>
+    </tr>
+<tbody>
+{% set counter = 1 %}
+{% for row in data %}
+<tr><td>{{ counter }}</td><td>{{ row.project_name }}</td><td>{{ row.project_manager_name }}</td><td>{{ row.build_year }}</td><td>{{ row.status }}</td></tr>
+    {% set counter = counter + 1 %}
+{% endfor %}
+</tbody>
+</table>
+  </div>
+</div>
+{% endblock %}

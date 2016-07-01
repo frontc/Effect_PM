@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block head %}
+    {{ super() }}
+    <script type="text/javascript">
+    $(function() {
+    $('#dropdownMenu1').bind('input propertychange', function() {
+      $.getJSON($SCRIPT_ROOT + '/_get_need_list', {
+        key_word: $("#dropdownMenu1").val()
+      }, function(data) {
+          var d = eval(data.result)
+          var s = ""
+          for (var o in d){
+              s = s+ "<li><a href='#'><h5>"+d[o].need_name+" <small>"+d[o].need_desc+"</small></h5></a></li>"
+          }
+          $("#list").html(s)
+      });
+    });
+  });
+    $(function() {
+    $('#list').on('click','li',function() {
+        var select_need = $(this).text().split(" ",1)
+        $("#dropdownMenu1").val(select_need[0])
+      $.getJSON($SCRIPT_ROOT + '/_get_need_info', {
+        need_name: select_need[0]
+      }, function(data) {
+          $("#need_name").val(data.result["need_name"]);
+          $("#outer_sponsor").val(data.result["outer_sponsor"]);
+          $("#inner_sponsor").val(data.result["inner_sponsor"]);
+          $("#itsm_id").val(data.result["itsm_id"]);
+          $("#need_desc").val(data.result["need_desc"]);
+          $("#work_load").val(data.result["work_load"]);
+          $("#project_id").val(data.result["project_id"]);
+          $("#application_id").val(data.result["application_id"]);
+          $("#charge_person_id").val(data.result["charge_person_id"]);
+          $("#create_person_id").val(data.result["create_person_id"]);
+          $("#plan_commit_time").val(data.result["plan_commit_time"]);
+          $("#real_commit_time").val(data.result["real_commit_time"]);
+          $("#status").val(data.result["status"]);
+          $("#parent_need_id").val(data.result["parent_need_id"]);
+          $("#need_id").val(data.result["id"]);
+      });
+    });
+  });
+    </script>
+{% endblock %}
+{% block page_content %}
+    <div class="dropdown">
+        <input type="text" class="form-control dropdown-toggle" placeholder="Search for..." id="dropdownMenu1"
+               data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1" style="width: 100%" id="list">
+            {% for row in init_list %}
+            <li><a href="#"><h5>{{ row[0] }} <small>{{ row[1] }}</small></h5></a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    <br>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">变更需求</h3>
+        </div>
+        <div class="panel-body ">
+            {{ wtf.quick_form(form,form_type='horizontal',horizontal_columns=('sm',2,10),extra_classes='small') }}
+        </div>
+    </div>
+{% endblock %}

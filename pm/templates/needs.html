@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+    <script type="text/javascript">
+        $(function () {
+            $('#tbody').on('click', 'tr #detail_icon', function () { //绑定点击事件
+                var target = $(this).parent().attr('id'); //获取点击行的id值
+                if ($(this).find('span').hasClass('glyphicon-zoom-in')) {
+                    $.each($('#needs_table tbody tr'), function (i, tr) {
+                        if ($(this).attr('id') == target) { //遍历表格找到定位到被点击的行
+                            var currentRow = $('#needs_table tbody tr:eq(' + i + ')');
+                            $.getJSON($SCRIPT_ROOT + '/_get_need_detail', {need_id: target}, function (data) {
+                                var newRow = "<tr class='active'><td colspan=9>" +
+                                        "<div class='row'><div class='col-md-1'><strong>所属项目</strong></div>" +
+                                        "<div class='col-md-9'>" + data.result["project_name"] + "</div></div>" +
+                                        "<div class='row'><div class='col-md-1'><strong>所属系统</strong></div>" +
+                                        "<div class='col-md-9'>" + data.result["application_name"] + "</div></div>" +
+                                        "<div class='row'><div class='col-md-1'><strong>工作量</strong></div>" +
+                                        "<div class='col-md-9'>" + data.result["work_load"] + "  人日</div></div>" +
+                                        "<div class='row'><div class='col-md-10'><strong>需求描述</strong></div></div>" +
+                                        "<div class='row'><div class='col-md-10'>" + data.result["need_desc"] + "</div></div></td></tr>"
+                                currentRow.after(newRow);
+                            });
+                        }
+                    });
+                    $(this).find('span').removeClass('glyphicon-zoom-in');
+                    $(this).find('span').addClass('glyphicon-zoom-out');
+                }
+                else {
+                    $.each($('#needs_table tbody tr'), function (i, tr) {
+                        if ($(this).attr('id') == target) { //遍历表格找到定位到被点击的行
+                            var nextRow = $('#needs_table tbody tr:eq(' + (i + 1) + ')');
+                            nextRow.remove()
+                        }
+                    });
+                    $(this).find('span').removeClass('glyphicon-zoom-out');
+                    $(this).find('span').addClass('glyphicon-zoom-in');
+                }
+
+            });
+            $('#tbody').on('click', 'tr td #sons', function () {
+                if ($(this).text() != '0') {
+                    window.location.href = "/need/" + $(this).attr('value');
+                }
+            });
+        });
+    </script>
+{% endblock %}
+{% block page_content %}
+    <div class="table-responsive">
+        <table class="table table-hover table-condensed text-nowrap" id="needs_table">
+            <thead>
+            <tr>
+                <td></td>
+                <td id="need_name">需求名称</td>
+                <td id="sponsor">发起人</td>
+                <td id="itsm_id">itsm工单</td>
+                <td id="charge_person_name">负责人</td>
+                <td id="create_time">创建时间</td>
+                <td id="plan_commit_time">计划完成时间</td>
+                <td id="real_commit_time">实际完成时间</td>
+                <td id="status">状态</td>
+                <td id="sons">子需求</td>
+            </tr>
+            </thead>
+            <tbody id="tbody">
+            {% for n in data %}
+                <tr id="{{ n.id }}">
+                    <td id="detail_icon"><a href="#"><span class="glyphicon glyphicon-zoom-in"
+                                                           aria-hidden="true"></span></a></td>
+                    <td title="{{ n.need_name }}">{{ n.need_name|truncate(15) }}</td>
+                    <td>{{ n.outer_sponsor }}{{ n.inner_sponsor }}</td>
+                    <td>{{ n.itsm_id }}</td>
+                    <td>{{ n.charge_person_name }}</td>
+                    <td>{{ n.create_time }}</td>
+                    <td>{{ n.plan_commit_time }}</td>
+                    <td>{{ n.real_commit_time }}</td>
+                    <td>{{ n.status }}</td>
+                    <td><a id="sons" value="{{ n.id }}" href="#">{{ n.sons }}</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

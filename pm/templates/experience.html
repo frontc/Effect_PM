@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+    <!-- Latest compiled and minified Locales -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/locale/bootstrap-table-zh-CN.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            function queryParams(params) {
+                params.keyword = $('#keyword').val();
+                return params
+            }
+
+            function operateFormatter(row, value, index) {
+                return '<a class="detail"><span class="glyphicon glyphicon-list" aria-hidden="true"></span></a>';
+            }
+
+            window.operateEvents = {
+                'click .detail': function (e, value, row, index) {
+                    var url = "{{ url_for('experience_detail',exp_id=-1) }}"
+                    location.href= url.replace('-1',row.id)
+                }
+            };
+            $('#table').bootstrapTable({
+                pagination: true,
+                pageSize: 10,
+                pageNumber: 1,
+                singleSelect: true,//复选框只能选择一条记录
+                sidePagination: 'server',
+                toolbar: '#toolbar',
+                checkboxHeader: false,
+                idField: 'id',
+                sortOrder: 'desc',
+                columns: [{
+                    checkbox: true
+                }, {
+                    field: 'id',
+                    title: 'id',
+                    visible: false
+                },
+                    {
+                        field: 'title',
+                        title: '标题'
+                    }, {
+                        field: 'summary',
+                        title: '简介'
+                    }, {
+                        field: 'type',
+                        title: '类型'
+                    }, {
+                        field: 'related_project_name',
+                        title: '关联项目'
+                    }, {
+                        field: 'related_application_name',
+                        title: '关联系统'
+                    }, {
+                        field: 'modify_person_name',
+                        title: '贡献者'
+                    }, {
+                        field: 'modify_time',
+                        title: '贡献时间'
+                    }, {
+                        field: 'detail',
+                        title: '详情',
+                        formatter: operateFormatter,
+                        events: operateEvents
+                    }],
+                url: $SCRIPT_ROOT + "/_get_experience_list",
+                queryParams: queryParams
+            });
+            $('#refresh').on('click', function () {
+                $('#table').bootstrapTable('refresh');
+            });
+            $('#keyword').on('keypress', function (event) {
+                if (event.keyCode == "13") {
+                    $('#table').bootstrapTable('refresh');
+                }
+            });
+            $('#table').on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', function () {
+                $('#remove').prop('disabled', !$('#table').bootstrapTable('getSelections').length);
+                $('#edit').prop('disabled', !$('#table').bootstrapTable('getSelections').length);
+            });
+            $('#remove').click(function () {
+                var ids = $.map($('#table').bootstrapTable('getSelections'), function (row) {
+                    return row.id
+                });
+                $.post($SCRIPT_ROOT + '/_del_experience', JSON.stringify({id: ids}), function (data) {
+                    if (data == 'ok') {
+                        $('#table').bootstrapTable('remove', {
+                            field: 'id',
+                            values: ids
+                        });
+                        $('#remove').prop('disabled', true);
+                    }
+                });
+            });
+            $('#edit').click(function () {
+                var ids = $.map($('#table').bootstrapTable('getSelections'), function (row) {
+                    return row.id
+                });
+                var url = "{{ url_for('modify_experience',exp_id=-1) }}"
+                    location.href= url.replace('-1',ids)
+            });
+            $('#new').click(function () {
+                location.href = '{{ url_for('add_experience') }}';
+            });
+        })
+    </script>
+
+
+{% endblock %}
+{% block page_content %}
+    <div id="toolbar">
+        <button class="btn btn-default btn-sm" id="new">
+            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+        </button>
+        <button class="btn btn-default btn-sm" id="edit" disabled>
+            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+        </button>
+        <button class="btn btn-default btn-sm" id="remove" disabled>
+            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+        </button>
+        <input type="text" class="input-sm" placeholder="关键词" id="keyword">
+        <button class="btn btn-default btn-sm" id="refresh">
+            <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+        </button>
+    </div>
+    <table class="small" id="table">
+    </table>
+
+{% endblock %}

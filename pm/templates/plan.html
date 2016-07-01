@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+    <script src="//cdn.bootcss.com/handsontable/0.25.1/handsontable.full.min.js"></script>
+    <link href="//cdn.bootcss.com/handsontable/0.25.1/handsontable.full.min.css" rel="stylesheet">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/numeral.js/1.4.5/numeral.min.js"></script>
+    <script src="{{ url_for('static',filename='bootstrap-datetimepicker.min.js') }}" charset="UTF-8"></script>
+    <link href="{{ url_for('static',filename='bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static',filename='bootstrap-datetimepicker.zh-CN.js') }}" charset="UTF-8"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(".form_datetime").datetimepicker({
+                format: 'yyyy-mm-dd',
+                minView: 2,
+                autoclose: true,
+                todayHighlight: true,
+                todayBtn: true,
+                language: 'zh-CN'
+            }).on('changeDate', refresh_plan);
+
+            function refresh_plan() {
+                $.post($SCRIPT_ROOT + '/_refresh_task', JSON.stringify({
+                    select_date: $("#date_selector").val(),
+                    select_project: $("#project_selector option:selected").val(),
+                    select_application: $("#application_selector option:selected").val(),
+                    select_user: $("#user_selector option:selected").val()
+                }), function (data) {
+                    hot.loadData(data['result']);
+                    data_console.innerText = data['msg']
+                });
+            }
+
+            var $$ = function (id) {
+                return document.getElementById(id);
+            }, container = $$('data_div'), refresh = $$('refresh'), upload = $$('upload'), data_console = $$('data_console');
+
+            var data = {{ initdata|tojson }};
+            var user = {{ user_list|tojson }};
+            var need = {{ need_list|tojson }};
+            var status = {{ status_list|tojson }};
+            var delRow = new Array();
+
+            lengthValidator = function (value, callback) {
+                setTimeout(function () {
+                    if (value.length > 100) {
+                        callback(false);
+                    } else {
+                        callback(true)
+                    }
+                }, 100);
+            };
+
+            var hot = new Handsontable(container, {
+                data: data,
+                contextMenu: true,
+                startRows: 20,
+                colHeaders: ['ID', '阶段', '工作项', '任务明细', '负责人', '预计开始时间', '预计结束时间', '实际开始时间', '实际结束时间', '进度', '状态', '备注', '需求名称'],
+                minSpareRows: 1,
+                autoColumnSize: true,
+                columns: [
+                    {data: 'id', type: 'text', readOnly: true},
+                    {data: 'stage_name', type: 'text', readOnly: true},
+                    {data: 'task_name', type: 'text', readOnly: true},
+                    {data: 'task_detail', type: 'text', validator: lengthValidator, readOnly: true},
+                    {data: 'charge_person_name', type: 'dropdown', source: user, allowInvalid: false, readOnly: true},
+                    {data: 'plan_start_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
+                    {data: 'plan_finish_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
+                    {data: 'real_start_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
+                    {data: 'real_finish_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
+                    {data: 'processing_progress', type: 'numeric', format: '0%', readOnly: true},
+                    {data: 'status', type: 'dropdown', source: status, allowInvalid: false, readOnly: true},
+                    {data: 'comment', type: 'text', readOnly: true},
+                    {data: 'need_name', type: 'dropdown', source: need, allowInvalid: false, readOnly: true}
+                ],
+                contextMenu: ['row_above', 'row_below', 'remove_row', 'undo', 'redo'],
+                beforeRemoveRow: function (index, amount, logicalRows) {
+                    delRow.push(this.getDataAtCell(index, 0));
+                }
+            });
+
+
+            $("#upload").click(function () {
+                if ($('#project_selector').val() == '-1' && $('#application_selector').val() == '-1' && $('#user_selector').val() == '-1') {
+                    data_console.innerText = '无修改内容!';
+                    return;
+                }
+                $.post($SCRIPT_ROOT + '/_upload_task', JSON.stringify({
+                    data: hot.getData(),
+                    del: delRow
+                }), function (data) {
+                    data_console.innerText = data;
+                    $.post($SCRIPT_ROOT + '/_refresh_task', JSON.stringify({
+                        select_date: $("#date_selector").val(),
+                        select_project: $("#project_selector option:selected").val(),
+                        select_application: $("#application_selector option:selected").val(),
+                        select_user: $("#user_selector option:selected").val()
+                    }), function (data) {
+                        hot.loadData(data['result']);
+                    });
+                });
+            });
+
+            $("#download").click(function () {
+                $.post($SCRIPT_ROOT + '/_download_task', JSON.stringify({
+                    data: hot.getData()
+                }), function (data) {
+                    location.href = "/download/" + data;
+                    data_console.innerText = '下载成功!';
+                    setTimeout(function () {
+                        $.post($SCRIPT_ROOT + '/_clean', JSON.stringify({data: data}), function () {
+                        })
+                    }, 8000);
+                });
+            });
+            $('select').change(function () {
+                if ($('#project_selector').val() != '-1' || $('#application_selector').val() != '-1' || $('#user_selector').val() != '-1') {
+                    hot.updateSettings({
+                        columns: [
+                            {data: 'id', type: 'text', readOnly: true},
+                            {data: 'stage_name', type: 'text'},
+                            {data: 'task_name', type: 'text'},
+                            {data: 'task_detail', type: 'text', validator: lengthValidator},
+                            {data: 'charge_person_name', type: 'dropdown', source: user, allowInvalid: false},
+                            {data: 'plan_start_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false},
+                            {data: 'plan_finish_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false},
+                            {data: 'real_start_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false},
+                            {data: 'real_finish_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false},
+                            {data: 'processing_progress', type: 'numeric', format: '0%'},
+                            {data: 'status', type: 'dropdown', source: status, allowInvalid: false},
+                            {data: 'comment', type: 'text'},
+                            {data: 'need_name', type: 'dropdown', source: need, allowInvalid: false}
+                        ]
+                    });
+                }else{
+                    hot.updateSettings({
+                columns: [
+                    {data: 'id', type: 'text', readOnly: true},
+                    {data: 'stage_name', type: 'text', readOnly: true},
+                    {data: 'task_name', type: 'text', readOnly: true},
+                    {data: 'task_detail', type: 'text', validator: lengthValidator, readOnly: true},
+                    {data: 'charge_person_name', type: 'dropdown', source: user, allowInvalid: false, readOnly: true},
+                    {data: 'plan_start_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
+                    {data: 'plan_finish_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
+                    {data: 'real_start_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
+                    {data: 'real_finish_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
+                    {data: 'processing_progress', type: 'numeric', format: '0%', readOnly: true},
+                    {data: 'status', type: 'dropdown', source: status, allowInvalid: false, readOnly: true},
+                    {data: 'comment', type: 'text', readOnly: true},
+                    {data: 'need_name', type: 'dropdown', source: need, allowInvalid: false, readOnly: true}
+                ]
+            });
+                }
+                refresh_plan();
+            });
+        })
+    </script>
+{% endblock %}
+{% block page_content_wide %}
+    <div class="row">
+        <div class="col-md-2">
+            <button class="btn btn-default btn-sm" id="upload"><span class="glyphicon glyphicon-cloud-upload"
+                                                                     aria-hidden="true"></span></button>
+            <button class="btn btn-default btn-sm" id="download"><span class="glyphicon glyphicon-cloud-download"
+                                                                       aria-hidden="true"></span></button>
+        </div>
+        <div class="col-md-10">
+            <form class="form-inline small">
+                <label>项目</label>&nbsp;
+                <select class="form-control" id="project_selector">
+                    <option value="-1">--请选择--</option>
+                    {% for foo in project_choices %}
+                        <option value="{{ foo[0] }}">{{ foo[1] }}</option>
+                    {% endfor %}
+                </select>&nbsp;
+                <label>系统</label>&nbsp;
+                <select class="form-control" id="application_selector">
+                    <option value="-1">--请选择--</option>
+                    {% for foo in application_choices %}
+                        <option value="{{ foo[0] }}">{{ foo[1] }}</option>
+                    {% endfor %}
+                </select>&nbsp;
+                <label>人员</label>&nbsp;
+                <select class="form-control" id="user_selector">
+                    <option value="-1">--请选择--</option>
+                    {% for foo in user_choices %}
+                        <option value="{{ foo[0] }}">{{ foo[1] }}</option>
+                    {% endfor %}
+                </select>&nbsp;
+                <label>日期</label>&nbsp;
+                <input type="text" size="16" readonly class="form_datetime form-control" id="date_selector">
+            </form>
+        </div>
+    </div><br>
+    <pre id="data_console" class="console">选择具体项目/系统/人员,可修改任务;点击上传按钮,提交修改</pre>
+    <div id="data_div" class="small"></div>
+
+{% endblock %}
