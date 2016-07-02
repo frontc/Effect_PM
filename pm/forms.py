@@ -69,7 +69,6 @@ class ProjectForm(Form):
 
 
 class ApplicationForm(Form):
-    person_choices = [(u.id, u.user_name) for u in User.query.order_by('staff_id')]
     application_name = StringField("系统名称", [DataRequired(), check_application])
     product_manger_id = SelectField("产品经理", coerce=int)
     current_version = StringField("版本", [DataRequired()])

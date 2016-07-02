@@ -1,145 +1,27 @@
-<div class="alert alert-success" id="events-result" data-es="Aquí se muestra el resultado del evento"> Here is the
-    result of event.
-</div>
-<table id="events-table" data-url="data2.json" data-height="299" data-search="true" data-pagination="true"
-       data-show-columns="true">
-    <thead>
-    <tr>
-        <th data-field="state" data-checkbox="true"></th>
-        <th data-field="id" data-sortable="true">Item ID</th>
-        <th data-field="name" data-sortable="true">Item Name</th>
-        <th data-field="price" data-sortable="true">Item Price</th>
+{% extends "base.html" %}
+
+{% block page_content %}
+    <div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">通讯录</h3>
+  </div>
+  <div class="panel-body ">
+    <table id="table" class="table table-hover table-condensed" >
+    <tr><td>#</td>
+        <td>姓名</td>
+        <td>工号</td>
+        <td>邮箱</td>
+        <td>手机号</td>
     </tr>
-    </thead>
+<tbody>
+{% set counter = 1 %}
+{% for row in data %}
+<tr><td>{{ counter }}</td><td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td><td>{{ row[3] }}</td></tr>
+    {% set counter = counter + 1 %}
+{% endfor %}
+</tbody>
 </table>
-<script>     $(function () {
-    $(‘#basic - events - table‘).
-    next().click(function () {
-        $(this).hide();
-        var $result = $(‘#events - result‘)
-        ;
-        $(‘#events - table‘).
-        bootstrapTable({/*                 onAll: function (name, args) {                     console.log(‘Event: onAll, data: ‘, args);                 }                 onClickRow: function (row) {                     $result.text(‘Event: onClickRow, data: ‘ + JSON.stringify(row));                 },                 onDblClickRow: function (row) {                     $result.text(‘Event: onDblClickRow, data: ‘ + JSON.stringify(row));                 },                 onSort: function (name, order) {                     $result.text(‘Event: onSort, data: ‘ + name + ‘, ‘ + order);                 },                 onCheck: function (row) {                     $result.text(‘Event: onCheck, data: ‘ + JSON.stringify(row));                 },                 onUncheck: function (row) {                     $result.text(‘Event: onUncheck, data: ‘ + JSON.stringify(row));                 },                 onCheckAll: function () {                     $result.text(‘Event: onCheckAll‘);                 },                 onUncheckAll: function () {                     $result.text(‘Event: onUncheckAll‘);                 },                 onLoadSuccess: function (data) {                     $result.text(‘Event: onLoadSuccess, data: ‘ + data);                 },                 onLoadError: function (status) {                     $result.text(‘Event: onLoadError, data: ‘ + status);                 },                 onColumnSwitch: function (field, checked) {                     $result.text(‘Event: onSort, data: ‘ + field + ‘, ‘ + checked);                 },                 onPageChange: function (number, size) {                     $result.text(‘Event: onPageChange, data: ‘ + number + ‘, ‘ + size);                 },                 onSearch: function (text) {                     $result.text(‘Event: onSearch, data: ‘ + text);                 }                 */}).on(‘all.bs.table‘,
-        function (e, name, args) {
-            console.log(‘Event:‘
-        ,
-            name, ‘,
-            data:‘
-        ,
-            args
-        )
-            ;
-        }
+  </div>
+</div>
 
-        ).
-        on(‘click - row.bs.table‘,
-        function (e, row, $element) {
-            $result.text(‘Event: click - row.bs.table, data
-        : ‘ +JSON.stringify(row)
-        )
-            ;
-        }
-
-        ).
-        on(‘dbl - click - row.bs.table‘,
-        function (e, row, $element) {
-            $result.text(‘Event: dbl - click - row.bs.table, data
-        : ‘ +JSON.stringify(row)
-        )
-            ;
-        }
-
-        ).
-        on(‘sort.bs.table‘,
-        function (e, name, order) {
-            $result.text(‘Event: sort.bs.table, data
-        : ‘ +name + ‘, ‘ +order
-        )
-            ;
-        }
-
-        ).
-        on(‘check.bs.table‘,
-        function (e, row) {
-            $result.text(‘Event: check.bs.table, data
-        : ‘ +JSON.stringify(row)
-        )
-            ;
-        }
-
-        ).
-        on(‘uncheck.bs.table‘,
-        function (e, row) {
-            $result.text(‘Event: uncheck.bs.table, data
-        : ‘ +JSON.stringify(row)
-        )
-            ;
-        }
-
-        ).
-        on(‘check - all.bs.table‘,
-        function (e) {
-            $result.text(‘Event: check - all.bs.table‘)
-            ;
-        }
-
-        ).
-        on(‘uncheck - all.bs.table‘,
-        function (e) {
-            $result.text(‘Event: uncheck - all.bs.table‘)
-            ;
-        }
-
-        ).
-        on(‘load - success.bs.table‘,
-        function (e, data) {
-            $result.text(‘Event: load - success.bs.table‘)
-            ;
-        }
-
-        ).
-        on(‘load - error.bs.table‘,
-        function (e, status) {
-            $result.text(‘Event: load - error.bs.table, data
-        : ‘ +status
-        )
-            ;
-        }
-
-        ).
-        on(‘column -
-        switch
-            .
-                bs.table‘,
-            function (e, field, checked) {
-                $result.text(‘Event: column -
-                switch
-                    .
-                        bs.table, data
-                    : ‘ +field + ‘, ‘ +checked
-                    )
-                        ;
-                }
-
-            ).
-                on(‘page - change.bs.table‘,
-            function (e, size, number) {
-                $result.text(‘Event: page - change.bs.table, data
-            : ‘ +number + ‘, ‘ +size
-            )
-                ;
-            }
-
-            ).
-                on(‘search.bs.table‘,
-            function (e, text) {
-                $result.text(‘Event: search.bs.table, data
-            : ‘ +text
-            )
-                ;
-            }
-
-            )
-                ;
-        });
-}); </script>
+{% endblock %}

@@ -6,18 +6,20 @@ from sqlalchemy.dialects.mysql import BLOB, INTEGER, VARCHAR, TIMESTAMP
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_name = db.Column(db.String(80), unique=True)
-    staff_id = db.Column(db.String(10), unique=True)
-    email = db.Column(db.String(100), unique=True)
-    phone_number = db.Column(db.BigInteger, unique=True)
-    password = db.Column(db.String(20), nullable=False, default='123456')
+    user_name = db.Column(db.String(80), nullable=False, unique=True)
+    staff_id = db.Column(db.String(10), nullable=False, unique=True)
+    email = db.Column(db.String(100), nullable=False, unique=True)
+    phone_number = db.Column(db.BigInteger, nullable=False, unique=True)
+    password = db.Column(db.String(20), nullable=False)
     role = db.Column(db.Integer, default=1)
+    enable = db.Column(db.Integer,default=1)
 
     def __init__(self, user_name, staff_id, email, phone_number):
         self.user_name = user_name
         self.staff_id = staff_id
         self.email = email
         self.phone_number = phone_number
+        self.password = phone_number
 
     def is_authenticated(self):
         return True

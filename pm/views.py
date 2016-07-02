@@ -36,7 +36,7 @@ def login():
     if form.validate_on_submit():
         input_staff_id = form.staff_id.data
         input_password = form.password.data
-        user = User.query.filter_by(staff_id=input_staff_id).first()
+        user = User.query.filter(User.staff_id == input_staff_id, User.enable == 1).first()
         if user is None:
             flash("用户不存在!")
         elif user.verify_pwd(input_password):
@@ -87,11 +87,7 @@ def need(need_id):
 @app.route("/address")
 @login_required
 def address():
-    users = User.query.all()
-    data = []
-    for user in users:
-        data.append((user.user_name, user.staff_id, user.email, user.phone_number))
-    return render_template('address.html', data=data)
+    return render_template('address.html')
 
 
 @app.route('/_get_project_info')
@@ -108,7 +104,7 @@ def setting_project():
     # 表格信息区
     projects = db.engine.execute(SQL['PROJECT_INFO'])
     project_choices = [(p.id, p.project_name) for p in Project.query.order_by('id')]
-    user_choices = [(p.id, p.user_name) for p in User.query.order_by('id')]
+    user_choices = [(p.id, p.user_name) for p in User.query.filter(User.enable == 1).order_by('id')]
     # 增加项目区
     add_form = ProjectForm()
     add_form.project_manager.choices = user_choices
@@ -174,7 +170,7 @@ def setting_application():
     # 表格信息区
     applications = db.engine.execute(SQL['APPLICATION_INFO'])
     application_choices = [(p.id, p.application_name) for p in Application.query.order_by('id')]
-    user_choices = [(p.id, p.user_name) for p in User.query.order_by('id')]
+    user_choices = [(p.id, p.user_name) for p in User.query.filter(User.enable == 1).order_by('id')]
     status_choices = APPLICATION_STATUS
     # 增加项目区
     add_form = ApplicationForm()
@@ -209,7 +205,7 @@ def setting_application():
 @app.route("/_modify_application", methods=["POST", "GET"])
 @login_required
 def _modify_application():
-    if g.user.role == 0:
+    if not g.user.role:
         try:
             db.session.query(Application).filter(Application.id == request.form['modify_application_id']). \
                 update({'application_name': request.form['modify_application_name'], \
@@ -236,8 +232,8 @@ def add_need():
     project_choices.append((-1, '无'))
     application_choices = [(u.id, u.application_name) for u in Application.query.order_by('id')]
     application_choices.append((-1, '无'))
-    person_choices = [(u.id, u.user_name) for u in User.query.order_by('staff_id')]
-    need_choices = [(u.id, u.need_name) for u in Need.query.filter_by(level_id=1).all()]
+    person_choices = [(u.id, u.user_name) for u in User.query.filter(User.enable == 1).order_by('staff_id')]
+    need_choices = [(u.id, u.need_name) for u in Need.query.filter(Need.level_id == 1).all()]
     need_choices.insert(0, (-1, '无'))
     form.charge_person_id.choices = person_choices
     form.project_id.choices = project_choices
@@ -250,20 +246,20 @@ def add_need():
         if form.parent_need_id.data == -1:
             auto_level_id = 1
         try:
-            new_need = Need(form.need_name.data.strip(), \
-                            form.outer_sponsor.data.strip(), \
-                            form.inner_sponsor.data.strip(), \
-                            form.itsm_id.data.strip(), \
-                            form.need_desc.data, \
-                            form.project_id.data, \
-                            form.application_id.data, \
-                            g.user.id, \
-                            form.charge_person_id.data, \
-                            form.plan_commit_time.data, \
-                            None, \
-                            form.status.data, \
-                            form.parent_need_id.data, \
-                            auto_level_id, \
+            new_need = Need(form.need_name.data.strip(),
+                            form.outer_sponsor.data.strip(),
+                            form.inner_sponsor.data.strip(),
+                            form.itsm_id.data.strip(),
+                            form.need_desc.data,
+                            form.project_id.data,
+                            form.application_id.data,
+                            g.user.id,
+                            form.charge_person_id.data,
+                            form.plan_commit_time.data,
+                            None,
+                            form.status.data,
+                            form.parent_need_id.data,
+                            auto_level_id,
                             form.work_load.data.strip())
             db.session.add(new_need)
             db.session.commit()
@@ -284,8 +280,8 @@ def modify_need():
     project_choices.append((-1, '无'))
     application_choices = [(u.id, u.application_name) for u in Application.query.order_by('id')]
     application_choices.append((-1, '无'))
-    person_choices = [(u.id, u.user_name) for u in User.query.order_by('staff_id')]
-    need_choices = [(u.id, u.need_name) for u in Need.query.filter_by(level_id=1).all()]
+    person_choices = [(u.id, u.user_name) for u in User.query.filter(User.enable == 1).order_by('staff_id')]
+    need_choices = [(u.id, u.need_name) for u in Need.query.filter(Need.level_id == 1).all()]
     need_choices.insert(0, (-1, '无'))
     form.project_id.choices = project_choices
     form.charge_person_id.choices = person_choices
@@ -624,10 +620,10 @@ def _get_activity():
     req_data = json.loads(request.get_data())
     limits = int(req_data['limits'])
     sql = SQL['ACTIVITY_LIST'].format(g.user.id)
-    activitys = db.engine.execute(sql)
+    activities = db.engine.execute(sql)
     activity_list = []
     counter = 0
-    for item in activitys:
+    for item in activities:
         activity_list.append(item[0])
         counter += 1
         if counter == limits or counter == 50:
@@ -848,3 +844,141 @@ def _get_experience():
         if counter == limits or counter == 50:
             break
     return jsonify(result=exp_list)
+
+
+@app.route('/_get_user_list')
+@login_required
+def _get_user_list():
+    order = request.args.get('order')
+    limit = request.args.get('limit')
+    offset = request.args.get('offset')
+    keyword = request.args.get('keyword')
+    total_sql = SQL['USER_TOTAL'].format(keyword)
+    total_result = db.engine.execute(total_sql).first()['total']
+    list_sql = SQL["USER_LIST"].format(keyword, int(offset) * int(limit), limit, order)
+    list_result = db.engine.execute(list_sql)
+    o = []
+    for i in list_result:
+        row = {
+            "id": i[0],
+            "user_name": i[1],
+            "staff_id": i[2],
+            "email": i[3],
+            "phone_number": i[4]
+        }
+        o.append(row)
+    return jsonify(total=total_result, rows=o)
+
+
+@app.route('/_del_user', methods=['POST'])
+@login_required
+def _del_user():
+    req_data = json.loads(request.get_data())
+    user_id = int(req_data['id'][0])
+    if not g.user.role:
+        try:
+            if Project.query.filter(Project.project_manager_id == user_id, Project.status != 3).count():
+                return '该用户所负责的项目未结项!'
+            if Application.query.filter(Application.product_manager_id == user_id).count():
+                return '该用户是系统的负责人!'
+            if Need.query.filter(Need.charge_person_id == user_id, Need.status != 6).count():
+                return '该用户有未完成的需求!'
+            if Task.query.filter(Task.charge_person_id == user_id, Task.status != 4, Task.status != 5).count():
+                return '该用户有未完成的任务!'
+            user_name = db.session.query(User).filter(User.id == user_id).first().user_name
+            db.session.query(User).filter(User.id == user_id).update({'enable': 0}, synchronize_session='evaluate')
+            db.session.commit()
+            log('system', '删除用户', user_id, user_name, '成功')
+            return 'ok'
+        except Exception, e:
+            print Exception, e
+            return '删除用户失败!'
+    else:
+        return '您无权删除用户!'
+
+
+@app.route('/_operate_user', methods=['POST'])
+@login_required
+def _operate_user():
+    req_data = json.loads(request.get_data())
+    user_name = req_data['user_name']
+    staff_id = req_data['staff_id']
+    email = req_data['email']
+    phone_number = req_data['phone_number']
+    operate_type = req_data['operate_type']
+
+    if not g.user.role:
+        try:
+            if operate_type == 'add':
+                if db.session.query(User).filter(User.staff_id == staff_id, User.enable == 0).count():
+                    db.session.query(User).filter(User.staff_id == staff_id, User.enable == 0).update(
+                        {'user_name': user_name,
+                         'email': email,
+                         'phone_number': phone_number,
+                         'enable': 1,
+                         'password': 123456
+                         }, synchronize_session='evaluate')
+                    db.session.commit()
+                    log('system', '解禁用户', -1, user_name, '成功')
+                else:
+                    if db.session.query(User).filter(
+                                                    (User.user_name == user_name) |
+                                                    (User.staff_id == staff_id) |
+                                            (User.email == email) | (User.phone_number == phone_number)).count():
+                        return '姓名、工号、邮箱、手机等信息重复!'
+                    new_user = User(user_name, staff_id, email, phone_number)
+                    db.session.add(new_user)
+                    db.session.commit()
+                    log('system', '增加用户', new_user.id, user_name, '成功')
+            else:
+                user_id = int(req_data['user_id'])
+                db.session.query(User).filter(User.id == user_id).update({'user_name': user_name,
+                                                                          'staff_id': staff_id,
+                                                                          'email': email,
+                                                                          'phone_number': phone_number},
+                                                                         synchronize_session='evaluate')
+                db.session.commit()
+                log('system', '增加用户', user_id, user_name, '成功')
+            return 'ok'
+        except Exception, e:
+            print Exception, e
+            if operate_type == 'add':
+                return '数据库服务异常!'
+            else:
+                return '更新失败!'
+    else:
+        return '您无权添加用户!'
+
+
+@app.route('/_get_user_info', methods=['POST'])
+@login_required
+def _get_user_info():
+    req_data = json.loads(request.get_data())
+    try:
+        user = User.query.get(int(req_data['user_id'][0]))
+        user_info = [{'user_name': user.user_name, 'staff_id': user.staff_id, 'email': user.email,
+                      'phone_number': user.phone_number}]
+        return jsonify(user=user_info, msg='ok')
+    except Exception, e:
+        print Exception, e
+        return jsonify(msg='获取用户信息失败!')
+
+
+@app.route('/_modify_password', methods=['POST'])
+@login_required
+def _modify_password():
+    req_data = json.loads(request.get_data())
+    old_pwd = req_data['old_pwd']
+    new_pwd = req_data['new_pwd']
+    try:
+        user = db.session.query(User).filter(User.id==g.user.id, User.password == old_pwd).first()
+        if user is None:
+            return '密码错误!'
+        db.session.query(User).filter(User.id == int(g.user.id)).update({'password': new_pwd},
+                                                                        synchronize_session='evaluate')
+        db.session.commit()
+        log('system', '修改密码', user.id, user.user_name, '成功')
+        return 'ok'
+    except Exception, e:
+        print Exception, e
+        return '数据库服务异常!'

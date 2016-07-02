@@ -1,27 +1,323 @@
 {% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+    <!-- Latest compiled and minified Locales -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/locale/bootstrap-table-zh-CN.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+            });
 
+            function queryParams(params) {
+                params.keyword = $('#keyword').val();
+                return params
+            }
+
+            $('#table').bootstrapTable({
+                pagination: true,
+                pageSize: 50,
+                pageNumber: 1,
+                singleSelect: true,//复选框只能选择一条记录
+                sidePagination: 'server',
+                toolbar: '#toolbar',
+                checkboxHeader: false,
+                idField: 'id',
+                sortOrder: 'asc',
+                columns: [{
+                    checkbox: true
+                }, {
+                    field: 'id',
+                    title: 'id',
+                    visible: false
+                },
+                    {
+                        field: 'user_name',
+                        title: '姓名'
+                    }, {
+                        field: 'staff_id',
+                        title: '工号'
+                    }, {
+                        field: 'email',
+                        title: '邮箱'
+                    }, {
+                        field: 'phone_number',
+                        title: '手机'
+                    }],
+                url: $SCRIPT_ROOT + "/_get_user_list",
+                queryParams: queryParams
+            });
+            $('#refresh').on('click', function () {
+                $('#table').bootstrapTable('refresh');
+                $('#remove').prop('disabled', 1);
+                $('#edit').prop('disabled', 1);
+            });
+            $('#keyword').on('keypress', function (event) {
+                if (event.keyCode == "13") {
+                    $('#table').bootstrapTable('refresh');
+                    $('#remove').prop('disabled', 1);
+                    $('#edit').prop('disabled', 1);
+                }
+            });
+            $('#table').on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', function () {
+                $('#remove').prop('disabled', !$('#table').bootstrapTable('getSelections').length);
+                $('#edit').prop('disabled', !$('#table').bootstrapTable('getSelections').length);
+            });
+            $('#remove').click(function () {
+                var ids = $.map($('#table').bootstrapTable('getSelections'), function (row) {
+                    return row.id
+                });
+                $.post($SCRIPT_ROOT + '/_del_user', JSON.stringify({id: ids}), function (data) {
+                    if (data == 'ok') {
+                        $('#table').bootstrapTable('remove', {
+                            field: 'id',
+                            values: ids
+                        });
+                        $('#remove').prop('disabled', true);
+                    } else {
+                        showMessage(data, 'danger');
+                    }
+                });
+            });
+
+            $('#edit').click(function () {
+                var ids = $.map($('#table').bootstrapTable('getSelections'), function (row) {
+                    return row.id
+                });
+                $.post($SCRIPT_ROOT + '/_get_user_info', JSON.stringify({user_id: ids}), function (result) {
+                    if (result['msg'] == 'ok') {
+                        $('#operateUserModalTitle').text('修改用户');
+                        $('#user_id').val(ids);
+                        $('#operateUserName').val(result['user'][0].user_name);
+                        $('#operateStaffID').val(result['user'][0].staff_id);
+                        $('#operateUserEmail').val(result['user'][0].email);
+                        $('#operateUserPhone').val(result['user'][0].phone_number);
+                        $('#operateUserModal').modal('show');
+                    } else {
+                        showMessage(result['msg'], 'danger');
+                    }
+                });
+            });
+
+            $('#new').click(function () {
+                $('#operateUserModalTitle').text('新增用户');
+            });
+
+            $('#operateUserSubmitButton').click(function () {
+                var operateUserName = $.trim($('#operateUserName').val());
+                var operateStaffID = $.trim($('#operateStaffID').val());
+                var operateUserEmail = $.trim($('#operateUserEmail').val());
+                var operateUserPhone = $.trim($('#operateUserPhone').val());
+                var operate_type = $('#operateUserModalTitle').text() == '新增用户' ? 'add' : 'edit';
+                var user_id = $('#user_id').val();
+                if (operateUserName.length) {
+                    $('#operateUserNameInput').removeClass('has-error');
+                } else {
+                    $('#operateUserNameInput').addClass('has-error');
+                    return;
+                }
+                if (operateStaffID.length) {
+                    $('#operateStaffIDInput').removeClass('has-error');
+                } else {
+                    $('#operateStaffIDInput').addClass('has-error');
+                    return;
+                }
+                if (operateUserEmail.length) {
+                    $('#operateUserEmailInput').removeClass('has-error');
+                } else {
+                    $('#operateUserEmailInput').addClass('has-error');
+                    return;
+                }
+                if (operateUserPhone.length) {
+                    $('#operateUserPhoneInput').removeClass('has-error');
+                } else {
+                    $('#operateUserPhoneInput').addClass('has-error');
+                    return;
+                }
+                $.post($SCRIPT_ROOT + '/_operate_user', JSON.stringify({
+                    user_name: operateUserName,
+                    staff_id: operateStaffID,
+                    email: operateUserEmail,
+                    phone_number: operateUserPhone,
+                    operate_type: operate_type,
+                    user_id: user_id
+                }), function (data) {
+                    if (data == 'ok') {
+                        $('#operateUserModal').modal('hide');
+                        $('#table').bootstrapTable('refresh');
+                        $('#remove').prop('disabled', 1);
+                        $('#edit').prop('disabled', 1);
+                    } else {
+                        showMessage(data, 'danger', 'msgWall');
+                    }
+                });
+            });
+            $('#editMeSubmitButton').click(function () {
+                var oldPwd = $.trim($('#oldPassWord').val());
+                var newPwd = $.trim($('#newPassWord').val());
+                var newPwd2 = $.trim($('#newPassWordAgain').val());
+                if (oldPwd.length) {
+                    $('#editMeInput1').removeClass('has-error');
+                } else {
+                    $('#editMeInput1').addClass('has-error');
+                    return;
+                }
+                if (newPwd.length) {
+                    $('#editMeInput2').removeClass('has-error');
+                } else {
+                    $('#editMeInput2').addClass('has-error');
+                    return;
+                }
+                if (newPwd2.length) {
+                    $('#editMeInput3').removeClass('has-error');
+                } else {
+                    $('#editMeInput3').addClass('has-error');
+                    return;
+                }
+                if (newPwd != newPwd2) {
+                    $('#editMeInput2').addClass('has-error');
+                    $('#editMeInput3').addClass('has-error');
+                    showMessage('两次密码输入不一致!','danger','meMsgWall');
+                    return;
+                }else if(newPwd.length<3){
+                    $('#editMeInput2').addClass('has-error');
+                    $('#editMeInput3').addClass('has-error');
+                    showMessage('密码太短!','danger','meMsgWall');
+                    return;
+                }else{
+                    $('#editMeInput2').removeClass('has-error');
+                    $('#editMeInput3').removeClass('has-error');
+                }
+
+                $.post($SCRIPT_ROOT + '/_modify_password', JSON.stringify({
+                    old_pwd: oldPwd,
+                    new_pwd: newPwd
+                }), function (data) {
+                    if (data == 'ok') {
+                        $('#editMeModal').modal('hide');
+                        showMessage('密码修改成功,请重新登陆!','success');
+                        setTimeout(function () {
+                            location.href = "{{ url_for('logout') }}";
+                        },2000);
+                    } else {
+                        showMessage(data, 'danger', 'meMsgWall');
+                    }
+                });
+            });
+        })
+    </script>
+{% endblock %}
 {% block page_content %}
-    <div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">通讯录</h3>
-  </div>
-  <div class="panel-body ">
-    <table id="table" class="table table-hover table-condensed" >
-    <tr><td>#</td>
-        <td>姓名</td>
-        <td>工号</td>
-        <td>邮箱</td>
-        <td>手机号</td>
-    </tr>
-<tbody>
-{% set counter = 1 %}
-{% for row in data %}
-<tr><td>{{ counter }}</td><td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td><td>{{ row[3] }}</td></tr>
-    {% set counter = counter + 1 %}
-{% endfor %}
-</tbody>
-</table>
-  </div>
-</div>
-
+    <div id="toolbar">
+        <button class="btn btn-default btn-sm" id="edit_me" data-toggle="modal" data-target='#editMeModal'>
+            <span class="glyphicon glyphicon-user" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="修改密码"></span>
+        </button>
+        <button class="btn btn-default btn-sm" id="new" data-toggle="modal" data-target='#operateUserModal'>
+            <span class="glyphicon glyphicon-plus" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="新增"></span>
+        </button>
+        <button class="btn btn-default btn-sm" id="edit" disabled>
+            <span class="glyphicon glyphicon-edit" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="编辑"></span>
+        </button>
+        <button class="btn btn-default btn-sm" id="remove" disabled>
+            <span class="glyphicon glyphicon-remove" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="删除"></span>
+        </button>
+        <input type="text" class="input-sm" placeholder="关键词" id="keyword">
+        <button class="btn btn-default btn-sm" id="refresh">
+            <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="搜索"></span>
+        </button>
+    </div>
+    <table class="small" id="table">
+    </table>
+    <div class="modal fade" id="operateUserModal" tabindex="-1" role="dialog" aria-labelledby="operateUserModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="operateUserModalTitle">新增用户</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="msgWall"></div>
+                    <form class="form-horizontal small">
+                        <input id="user_id" hidden>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">姓名</label>
+                            <div class="col-sm-3" id="operateUserNameInput"><input type="text"
+                                                                                   class="form-control has-error"
+                                                                                   id="operateUserName"
+                                                                                   placeholder="必填"></div>
+                            <label class="col-sm-2 control-label">工号</label>
+                            <div class="col-sm-3" id="operateStaffIDInput"><input type="text" class="form-control"
+                                                                                  id="operateStaffID" placeholder="必填">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">邮箱</label>
+                            <div class="col-sm-8" id="operateUserEmailInput"><input type="text" class="form-control"
+                                                                                    id="operateUserEmail"
+                                                                                    placeholder="必填"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">手机</label>
+                            <div class="col-sm-8" id="operateUserPhoneInput"><input type="text" class="form-control"
+                                                                                    id="operateUserPhone"
+                                                                                    placeholder="必填"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="operateUserSubmitButton">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="editMeModal" tabindex="-1" role="dialog" aria-labelledby="editMeModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="editMeModalTitle">修改密码</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="meMsgWall"></div>
+                    <form class="form-horizontal small">
+                        <input id="user_id" hidden>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">原密码</label>
+                            <div class="col-sm-8" id="editMeInput1"><input type="password" class="form-control"
+                                                                           id="oldPassWord"
+                                                                           placeholder="必填"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">新密码</label>
+                            <div class="col-sm-8" id="editMeInput2"><input type="password" class="form-control"
+                                                                           id="newPassWord"
+                                                                           placeholder="必填"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">再次输入</label>
+                            <div class="col-sm-8" id="editMeInput3"><input type="password" class="form-control"
+                                                                           id="newPassWordAgain"
+                                                                           placeholder="必填"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="editMeSubmitButton">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

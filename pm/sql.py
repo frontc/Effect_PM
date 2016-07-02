@@ -240,5 +240,15 @@ WHERE experience.title LIKE '%%{0}%%' OR \
     "EXP_LIST": "select id,title,url,summary,\
   (select user_name from user where user.id=modify_person_id) user,\
   date_format(modify_time,'%%Y-%%m-%%d') modify_time,type \
-from experience order by modify_time DESC"
+from experience order by modify_time DESC",
+    "USER_TOTAL": "SELECT count(*) total \
+FROM user \
+WHERE user.enable=1 and (user.user_name LIKE '%%{0}%%' OR \
+      user.staff_id LIKE '%%{0}%%')",
+    "USER_LIST": "SELECT id,user_name,staff_id,email,phone_number \
+FROM user \
+WHERE user.enable=1 and (user.user_name LIKE '%%{0}%%' OR \
+      user.staff_id LIKE '%%{0}%%') \
+      ORDER BY staff_id {3} \
+      limit {1},{2}"
 }
