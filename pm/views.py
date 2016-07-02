@@ -111,6 +111,7 @@ def setting_project():
     user_choices = [(p.id, p.user_name) for p in User.query.order_by('id')]
     # 增加项目区
     add_form = ProjectForm()
+    add_form.project_manager.choices = user_choices
     if add_form.validate_on_submit():
         if g.user.role == 0:
             try:
@@ -177,6 +178,7 @@ def setting_application():
     status_choices = APPLICATION_STATUS
     # 增加项目区
     add_form = ApplicationForm()
+    add_form.product_manger_id.choices = user_choices
     if add_form.validate_on_submit():
         if g.user.role == 0:
             try:
@@ -230,7 +232,20 @@ def _modify_application():
 @login_required
 def add_need():
     form = NeedForm()
+    project_choices = [(u.id, u.project_name) for u in Project.query.order_by('id')]
+    project_choices.append((-1, '无'))
+    application_choices = [(u.id, u.application_name) for u in Application.query.order_by('id')]
+    application_choices.append((-1, '无'))
+    person_choices = [(u.id, u.user_name) for u in User.query.order_by('staff_id')]
+    need_choices = [(u.id, u.need_name) for u in Need.query.filter_by(level_id=1).all()]
+    need_choices.insert(0, (-1, '无'))
+    form.charge_person_id.choices = person_choices
+    form.project_id.choices = project_choices
+    form.application_id.choices = application_choices
+    form.parent_need_id.choices = need_choices
     if form.validate_on_submit():
+        print form.outer_sponsor.data
+        print form.inner_sponsor.data
         auto_level_id = 2
         if form.parent_need_id.data == -1:
             auto_level_id = 1
@@ -265,6 +280,18 @@ def add_need():
 @login_required
 def modify_need():
     form = ModifyNeedForm()
+    project_choices = [(u.id, u.project_name) for u in Project.query.order_by('id')]
+    project_choices.append((-1, '无'))
+    application_choices = [(u.id, u.application_name) for u in Application.query.order_by('id')]
+    application_choices.append((-1, '无'))
+    person_choices = [(u.id, u.user_name) for u in User.query.order_by('staff_id')]
+    need_choices = [(u.id, u.need_name) for u in Need.query.filter_by(level_id=1).all()]
+    need_choices.insert(0, (-1, '无'))
+    form.project_id.choices = project_choices
+    form.charge_person_id.choices = person_choices
+    form.application_id.choices = application_choices
+    form.parent_need_id.choices = need_choices
+
     needs = db.engine.execute(SQL['NEED_LIST_DESC'])
     if form.validate_on_submit():
         if g.user.role == 0 or g.user.id == form.create_person_id.data:
