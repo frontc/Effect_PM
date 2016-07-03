@@ -1,6 +1,6 @@
 from pm import db
 import time
-from config import TASK_STATUS
+from pm.const import TASK_STATUS
 from sqlalchemy.dialects.mysql import BLOB, INTEGER, VARCHAR, TIMESTAMP
 
 

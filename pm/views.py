@@ -10,7 +10,7 @@ from tool import nvl, join, genxls, clean, log
 from forms import LoginForm, ProjectForm, ApplicationForm, NeedForm, ModifyNeedForm
 from flask.ext.login import login_user, current_user, login_required, logout_user
 import urllib2, json, time
-from config import *
+from pm.const import *
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -262,7 +262,7 @@ def add_need():
     return render_template("add-need.html", form=form)
 
 
-@app.route("/modify_need/<int:need_id>",methods=['POST','GET'])
+@app.route("/modify_need/<int:need_id>", methods=['POST', 'GET'])
 @login_required
 def modify_need(need_id):
     form = ModifyNeedForm()
