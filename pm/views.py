@@ -3,13 +3,14 @@ import sys
 
 from flask import render_template, g, redirect, url_for, session, flash, request, jsonify, send_file, \
     send_from_directory
+from datetime import timedelta
 from pm import app, lm, db
 from models import User, Project, Application, Need, Task, Experience
 from sql import SQL
 from tool import nvl, join, genxls, clean, log
 from forms import LoginForm, ProjectForm, ApplicationForm, NeedForm, ModifyNeedForm
 from flask.ext.login import login_user, current_user, login_required, logout_user
-import urllib2, json, time
+import json, time
 from pm.const import *
 
 reload(sys)
@@ -41,6 +42,8 @@ def login():
             flash("用户不存在!")
         elif user.verify_pwd(input_password):
             login_user(user)
+            session.permanent = True
+            app.permanent_session_lifetime = timedelta(minutes=30)
             log('login', '登陆', g.user.id, user.user_name, '成功')
             flash("登录成功!")
             next_page = request.args.get("next")
@@ -59,6 +62,7 @@ def settings():
 @app.before_request
 def before_request():
     g.user = current_user
+    session.modified = True
 
 
 @app.route("/logout")
@@ -647,7 +651,7 @@ def _get_experience_list():
     keyword = request.args.get('keyword')
     total_sql = SQL['EXPERIENCE_TOTAL'].format(keyword)
     total = db.engine.execute(total_sql).first()['total']
-    list_sql = SQL["EXPERIENCE_LIST"].format(keyword, int(offset) * int(limit), limit)
+    list_sql = SQL["EXPERIENCE_LIST"].format(keyword, offset, limit)
     list = db.engine.execute(list_sql)
     o = []
     for i in list:
@@ -833,7 +837,7 @@ def _get_user_list():
     keyword = request.args.get('keyword')
     total_sql = SQL['USER_TOTAL'].format(keyword)
     total_result = db.engine.execute(total_sql).first()['total']
-    list_sql = SQL["USER_LIST"].format(keyword, int(offset) * int(limit), limit, order)
+    list_sql = SQL["USER_LIST"].format(keyword, offset, limit, order)
     list_result = db.engine.execute(list_sql)
     o = []
     for i in list_result:
@@ -976,7 +980,7 @@ def _get_need_list():
 
     total_sql = SQL['NEED_TOTAL'].format(keyword, project_id, application_id, status, dive_id)
     total_result = db.engine.execute(total_sql).first()['total']
-    list_sql = SQL["NEED_LIST"].format(keyword, project_id, application_id, status, int(offset) * int(limit), limit,
+    list_sql = SQL["NEED_LIST"].format(keyword, project_id, application_id, status, offset, limit,
                                        order, dive_id)
     list_result = db.engine.execute(list_sql)
     o = []

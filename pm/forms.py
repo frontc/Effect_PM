@@ -7,7 +7,7 @@ from wtforms import StringField, PasswordField, SubmitField, IntegerField, Selec
 from wtforms.validators import DataRequired, StopValidation
 from models import User, Project, Application, Need
 import datetime
-from config import NEED_STATUS_LIST
+from pm.const import NEED_STATUS_LIST
 
 reload(sys)
 sys.setdefaultencoding('utf8')
