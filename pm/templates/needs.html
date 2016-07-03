@@ -1,85 +1,239 @@
 {% extends "base.html" %}
 {% block head %}
     {{ super() }}
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+    <!-- Latest compiled and minified Locales -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/locale/bootstrap-table-zh-CN.min.js"></script>
     <script type="text/javascript">
-        $(function () {
-            $('#tbody').on('click', 'tr #detail_icon', function () { //绑定点击事件
-                var target = $(this).parent().attr('id'); //获取点击行的id值
-                if ($(this).find('span').hasClass('glyphicon-zoom-in')) {
-                    $.each($('#needs_table tbody tr'), function (i, tr) {
-                        if ($(this).attr('id') == target) { //遍历表格找到定位到被点击的行
-                            var currentRow = $('#needs_table tbody tr:eq(' + i + ')');
-                            $.getJSON($SCRIPT_ROOT + '/_get_need_detail', {need_id: target}, function (data) {
-                                var newRow = "<tr class='active'><td colspan=9>" +
-                                        "<div class='row'><div class='col-md-1'><strong>所属项目</strong></div>" +
-                                        "<div class='col-md-9'>" + data.result["project_name"] + "</div></div>" +
-                                        "<div class='row'><div class='col-md-1'><strong>所属系统</strong></div>" +
-                                        "<div class='col-md-9'>" + data.result["application_name"] + "</div></div>" +
-                                        "<div class='row'><div class='col-md-1'><strong>工作量</strong></div>" +
-                                        "<div class='col-md-9'>" + data.result["work_load"] + "  人日</div></div>" +
-                                        "<div class='row'><div class='col-md-10'><strong>需求描述</strong></div></div>" +
-                                        "<div class='row'><div class='col-md-10'>" + data.result["need_desc"] + "</div></div></td></tr>"
-                                currentRow.after(newRow);
-                            });
-                        }
-                    });
-                    $(this).find('span').removeClass('glyphicon-zoom-in');
-                    $(this).find('span').addClass('glyphicon-zoom-out');
+        $(document).ready(function () {
+            var select_project = $('#select_project');
+            var select_application = $('#select_application');
+            var select_status = $('#select_status');
+            var dive_id = -1;
+
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+            });
+
+            function queryParams(params) {
+                params.keyword = $('#keyword').val();
+                params.project_id = select_project.attr('value');
+                params.application_id = select_application.attr('value');
+                params.status = select_status.attr('value');
+                params.dive_id = dive_id;
+                return params
+            }
+
+            window.operateEvents = {
+                'click a': function (e, value, row, index) {
+                    dive_id = row.id;
+                    $('#table').bootstrapTable('refresh');
+                    $('#back').removeClass('hidden');
                 }
-                else {
-                    $.each($('#needs_table tbody tr'), function (i, tr) {
-                        if ($(this).attr('id') == target) { //遍历表格找到定位到被点击的行
-                            var nextRow = $('#needs_table tbody tr:eq(' + (i + 1) + ')');
-                            nextRow.remove()
-                        }
-                    });
-                    $(this).find('span').removeClass('glyphicon-zoom-out');
-                    $(this).find('span').addClass('glyphicon-zoom-in');
+            };
+
+            $('#table').bootstrapTable({
+                pagination: true,
+                pageSize: 20,
+                pageNumber: 1,
+                singleSelect: true,//复选框只能选择一条记录
+                sidePagination: 'server',
+                toolbar: '#toolbar',
+                checkboxHeader: false,
+                idField: 'id',
+                sortOrder: 'desc',
+                columns: [{
+                    checkbox: true
+                }, {
+                    field: 'id',
+                    title: 'id',
+                    visible: false
+                },
+                    {
+                        field: 'need_name',
+                        title: '需求',
+                        formatter: diveFormatter,
+                        events: operateEvents
+                    }, {
+                        field: 'sponsor',
+                        title: '发起人'
+                    }, {
+                        field: 'itsm_id',
+                        title: 'ITSM'
+                    }, {
+                        field: 'work_load',
+                        title: '工作量(人日)'
+                    }, {
+                        field: 'charge_person_name',
+                        title: '负责人'
+                    }, {
+                        field: 'create_time',
+                        title: '创建时间'
+                    }, {
+                        field: 'plan_commit_time',
+                        title: '计划完成时间'
+                    }, {
+                        field: 'real_commit_time',
+                        title: '实际完成时间'
+                    }, {
+                        field: 'status',
+                        title: '状态'
+                    }, {
+                        field: 'project_name',
+                        title: '所属项目',
+                        visible: false
+                    }, {
+                        field: 'application_name',
+                        title: '所属系统',
+                        visible: false
+                    }, {
+                        field: 'need_desc',
+                        title: '需求描述',
+                        visible: false
+                    }, {
+                        field: 'sons',
+                        title: '子需求',
+                        visible: false
+                    }],
+                showColumns: true,
+                iconSize: 'sm',
+                url: $SCRIPT_ROOT + "/_get_need_list",
+                queryParams: queryParams
+            });
+
+            function diveFormatter(value, row, index) {
+                if (row.sons > 0) {
+                    return '<a href="#">' + value + '</a>'
+                } else {
+                    return value
                 }
+            }
+
+
+            $('#refresh').on('click', function () {
+                $('#table').bootstrapTable('refresh');
+                $('#remove').prop('disabled', 1);
+                $('#edit').prop('disabled', 1);
+            });
+            $('#keyword').on('keypress', function (event) {
+                if (event.keyCode == "13") {
+                    $('#table').bootstrapTable('refresh');
+                    $('#remove').prop('disabled', 1);
+                    $('#edit').prop('disabled', 1);
+                }
+            });
+            $('#table').on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', function () {
+                $('#remove').prop('disabled', !$('#table').bootstrapTable('getSelections').length);
+                $('#edit').prop('disabled', !$('#table').bootstrapTable('getSelections').length);
+            });
+            $('#remove').click(function () {
+                var ids = $.map($('#table').bootstrapTable('getSelections'), function (row) {
+                    return row.id
+                });
+                $.post($SCRIPT_ROOT + '/_del_user', JSON.stringify({id: ids}), function (data) {
+                    if (data == 'ok') {
+                        $('#table').bootstrapTable('remove', {
+                            field: 'id',
+                            values: ids
+                        });
+                        $('#remove').prop('disabled', true);
+                    } else {
+                        showMessage(data, 'danger');
+                    }
+                });
+            });
+
+            $('#edit').click(function () {
+                var ids = $.map($('#table').bootstrapTable('getSelections'), function (row) {
+                    return row.id
+                });
+                var url ="{{ url_for('modify_need',need_id=-1) }}";
+                location.href = url.replace('-1', ids)
+            });
+
+            $('#back').click(function () {
+                dive_id = -1
+                $('#table').bootstrapTable('refresh');
+                $(this).addClass('hidden');
+            });
+
+            $('#new').click(function () {
+               location.href="{{ url_for('add_need') }}";
+            });
+
+            $('#project_ul').on('click', 'li', function () {
+                select_project.text(($(this).text()));
+                select_project.attr('value', $(this).val());
+            });
+
+            $('#application_ul').on('click', 'li', function () {
+                select_application.text(($(this).text()));
+                select_application.attr('value', $(this).val());
 
             });
-            $('#tbody').on('click', 'tr td #sons', function () {
-                if ($(this).text() != '0') {
-                    window.location.href = "/need/" + $(this).attr('value');
-                }
+
+            $('#status_ul').on('click', 'li', function () {
+                select_status.text(($(this).text()));
+                select_status.attr('value', $(this).val());
+
             });
-        });
+        })
     </script>
 {% endblock %}
 {% block page_content %}
-    <div class="table-responsive">
-        <table class="table table-hover table-condensed text-nowrap" id="needs_table">
-            <thead>
-            <tr>
-                <td></td>
-                <td id="need_name">需求名称</td>
-                <td id="sponsor">发起人</td>
-                <td id="itsm_id">itsm工单</td>
-                <td id="charge_person_name">负责人</td>
-                <td id="create_time">创建时间</td>
-                <td id="plan_commit_time">计划完成时间</td>
-                <td id="real_commit_time">实际完成时间</td>
-                <td id="status">状态</td>
-                <td id="sons">子需求</td>
-            </tr>
-            </thead>
-            <tbody id="tbody">
-            {% for n in data %}
-                <tr id="{{ n.id }}">
-                    <td id="detail_icon"><a href="#"><span class="glyphicon glyphicon-zoom-in"
-                                                           aria-hidden="true"></span></a></td>
-                    <td title="{{ n.need_name }}">{{ n.need_name|truncate(15) }}</td>
-                    <td>{{ n.outer_sponsor }}{{ n.inner_sponsor }}</td>
-                    <td>{{ n.itsm_id }}</td>
-                    <td>{{ n.charge_person_name }}</td>
-                    <td>{{ n.create_time }}</td>
-                    <td>{{ n.plan_commit_time }}</td>
-                    <td>{{ n.real_commit_time }}</td>
-                    <td>{{ n.status }}</td>
-                    <td><a id="sons" value="{{ n.id }}" href="#">{{ n.sons }}</a></td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <div id="toolbar">
+    <button class="btn btn-default btn-sm hidden" id="back"><a href="#">
+            <span class="glyphicon glyphicon-menu-left" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="返回"></span></a>
+        </button>
+        <button class="btn btn-default btn-sm" id="new">
+            <span class="glyphicon glyphicon-plus" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="新增"></span>
+        </button>
+        <button class="btn btn-default btn-sm" id="edit" disabled>
+            <span class="glyphicon glyphicon-edit" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="编辑"></span>
+        </button>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false"><span id="select_project" value="-1">选择项目</span> <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" id="project_ul">
+                <li value="-1"><a href="#">选择项目</a></li>
+                <li value="1"><a href="#">安徽电信客户视图三期</a></li>
+                <li value="2"><a href="#">安徽电信大数据应用七期</a></li>
+            </ul>
+        </div>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false"><span id="select_application" value="-1">选择系统</span> <span
+                    class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" id="application_ul">
+                <li value="-1"><a href="#">选择系统</a></li>
+                <li value="1"><a href="#">区域洞察</a></li>
+                <li value="2"><a href="#">营销视图</a></li>
+            </ul>
+        </div>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false"><span id="select_status" value="-1">需求状态</span> <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" id="status_ul">
+                <li value="-1"><a href="#">需求状态</a></li>
+                <li value="1"><a href="#">待对接</a></li>
+                <li value="2"><a href="#">待分析</a></li>
+            </ul>
+        </div>
+        <input type="text" class="input-sm" placeholder="需求关键词" id="keyword">
+        <button class="btn btn-default btn-sm" id="refresh">
+            <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top"
+                  title="搜索"></span>
+        </button>
     </div>
+    <table class="small" id="table">
+    </table>
 {% endblock %}

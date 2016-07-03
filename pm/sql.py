@@ -11,44 +11,6 @@ user.user_name as product_manager_name, \
 application.current_version as current_version, \
 (case application.status when 1 then '活跃' when 2 then '沉默' end) as status \
     from application,user where application.product_manager_id = user.id",
-    "NEED_LIST_DESC": "select need_name,\
-case when length(need_desc) = length(left(need_desc,30)) then need_desc \
-else concat(left(need_desc,30),'...') END as need_desc \
-from need order by create_time DESC limit 8",
-    "NEED_LIST_BY_KEYWORD": "select need_name,\
-  case when length(need_desc) = length(left(need_desc,30)) then need_desc \
-  else concat(left(need_desc,30),'...') END as need_desc \
-  from (\
-  select need_name,\
-  need_desc,\
-  concat((select user_name from user where user.id=need.create_person_id),(select user_name from user where user.id=need.charge_person_id)) user_name,\
-  create_time \
-from need) a \
-where need_name like '%%{0}%%' or need_desc like '%%{0}%%' or user_name like '%%{0}%%' \
-order by create_time DESC limit 8",
-    "NEEDS": "select id,need_name,outer_sponsor,inner_sponsor,itsm_id,\
-(select project_name from project where need.project_id=project.id) project_name,\
-(select application_name from application where need.application_id=application.id) application_name,\
-(select user_name from user where need.create_person_id=user.id) create_person_name,\
-(select user_name from user where need.charge_person_id=user.id) charge_person_name,\
-date_format(create_time,'%%Y-%%m-%%d') create_time,plan_commit_time,real_commit_time,\
-case status when 1 then '待对接' when 2 then '待分析' when 3 then '待设计' when 4 then '待实现' when 5 then '待发布' when 6 then '已完结' else '未知' end status,\
-(select count(1) from need b where b.parent_need_id=need.id) sons,work_load \
-from need need \
-where level_id = 1",
-    "NEEDS_SONS": "select id,need_name,outer_sponsor,inner_sponsor,itsm_id,\
-(select project_name from project where need.project_id=project.id) project_name,\
-(select application_name from application where need.application_id=application.id) application_name,\
-(select user_name from user where need.create_person_id=user.id) create_person_name,\
-(select user_name from user where need.charge_person_id=user.id) charge_person_name,\
-date_format(create_time,'%%Y-%%m-%%d') create_time,plan_commit_time,real_commit_time,\
-case status when 1 then '待对接' when 2 then '待分析' when 3 then '待设计' when 4 then '待实现' when 5 then '待发布' when 6 then '已完结' else '未知' end status,\
-(select count(1) from need b where b.parent_need_id=need.id) sons,work_load \
-from need need \
-where level_id = 2 and parent_need_id={0}",
-    "NEED_DETAIL": "select id,need_name,need_desc, \
-(select project_name from project where need.project_id=project.id) project_name,\
-(select application_name from application where need.application_id=application.id) application_name,(select user_name from user where need.create_person_id=user.id) create_person_name,work_load from need where id = {0}",
     "TASK_LIST": "SELECT id,stage_name,task_name,task_detail,\
   (SELECT user_name \
    FROM pm.user \
@@ -250,5 +212,25 @@ FROM user \
 WHERE user.enable=1 and (user.user_name LIKE '%%{0}%%' OR \
       user.staff_id LIKE '%%{0}%%') \
       ORDER BY staff_id {3} \
-      limit {1},{2}"
+      limit {1},{2}",
+    "NEED_TOTAL": "SELECT count(*) total \
+FROM need \
+WHERE ((-1={4} AND level_id=1) OR (level_id=2 AND parent_need_id={4})) AND (need_name LIKE '%%{0}%%' OR need_desc LIKE '%%{0}%%') AND \
+      (-1 = {1} OR project_id = {1}) AND \
+      (-1 = {2} OR application_id = {2}) AND \
+      (-1 = {3}  OR status = {3})",
+    "NEED_LIST": "SELECT id,need_name,concat(inner_sponsor,outer_sponsor) sponsor,itsm_id,work_load,\
+  (select user_name from user where user.id = need.charge_person_id) charge_person_name,\
+  create_time,plan_commit_time,real_commit_time,status,\
+  (select project_name from project where project.id=need.project_id) project_name,\
+  (select application_name from application where application.id=need.application_id) application_name,\
+  need_desc,\
+  (select count(*) from need b where b.level_id=2 and b.parent_need_id= need.id) sons \
+FROM need \
+WHERE ((-1={7} AND level_id=1) OR (level_id=2 AND parent_need_id={7})) AND (need_name LIKE '%%{0}%%' OR need_desc LIKE '%%{0}%%') AND \
+      (-1 = {1} OR project_id = {1}) AND \
+      (-1 = {2} OR application_id = {2}) AND \
+      (-1 = {3}  OR status = {3}) \
+      ORDER BY id {6} \
+      limit {4},{5}"
 }

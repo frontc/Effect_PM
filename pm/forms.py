@@ -86,8 +86,7 @@ class NeedForm(Form):
     project_id = SelectField("所属项目", coerce=int)
     application_id = SelectField("所属系统", coerce=int)
     charge_person_id = SelectField("需求负责人", coerce=int)
-    plan_commit_time = DateField("计划完成时间", [DataRequired()],
-                                 default=datetime.datetime.strptime('2016-06-01', '%Y-%m-%d'))
+    plan_commit_time = DateField("计划完成时间", [DataRequired()])
     status = SelectField("状态", coerce=int, choices=NEED_STATUS_LIST)
     parent_need_id = SelectField("父需求", coerce=int)
     submit = SubmitField("增加")
@@ -103,9 +102,8 @@ class ModifyNeedForm(Form):
     project_id = SelectField("所属项目", coerce=int, choices=[])
     application_id = SelectField("所属系统", coerce=int, choices=[])
     charge_person_id = SelectField("需求负责人", coerce=int, choices=[])
-    plan_commit_time = DateField("计划完成时间", [DataRequired()],
-                                 default=datetime.datetime.strptime('2016-06-01', '%Y-%m-%d'))
-    real_commit_time = StringField("实际完成时间", default=None)
+    plan_commit_time = StringField("计划完成时间", [DataRequired()])
+    real_commit_time = StringField("实际完成时间")
     status = SelectField("状态", coerce=int, choices=NEED_STATUS_LIST)
     parent_need_id = SelectField("父需求", coerce=int, choices=[], default=-1)
     create_person_id = HiddenField("需求创建人")

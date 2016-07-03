@@ -208,6 +208,11 @@
                     }
                 });
             });
+            if({{ g.user.role }}){
+                $('#new').hide();
+                $('#edit').hide();
+                $('#remove').hide();
+            }
         })
     </script>
 {% endblock %}

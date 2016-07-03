@@ -10,7 +10,7 @@ from tool import nvl, join, genxls, clean, log
 from forms import LoginForm, ProjectForm, ApplicationForm, NeedForm, ModifyNeedForm
 from flask.ext.login import login_user, current_user, login_required, logout_user
 import urllib2, json, time
-from config import PROJECT_STATUS, APPLICATION_STATUS, TASK_STATUS_LIST, EXPERIENCE_TYPE_DICT, EXPERIENCE_TYPE_LIST
+from config import *
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -71,17 +71,7 @@ def logout():
 @app.route("/needs")
 @login_required
 def needs():
-    sql = SQL['NEEDS']
-    needs = db.engine.execute(sql)
-    return render_template('needs.html', data=needs)
-
-
-@app.route("/need/<int:need_id>")
-@login_required
-def need(need_id):
-    sql = SQL['NEEDS_SONS'].format(need_id)
-    needs = db.engine.execute(sql)
-    return render_template('needs.html', data=needs)
+    return render_template('needs.html')
 
 
 @app.route("/address")
@@ -265,21 +255,21 @@ def add_need():
             db.session.commit()
             log('need', '增加需求', new_need.id, new_need.need_name, '成功')
             flash("需求添加成功!")
+            return redirect(url_for('needs'))
         except Exception, e:
             print Exception, e
             flash("需求添加失败!")
-        return redirect(url_for('add_need'))
     return render_template("add-need.html", form=form)
 
 
-@app.route("/modify_need", methods=["POST", "GET"])
+@app.route("/modify_need/<int:need_id>",methods=['POST','GET'])
 @login_required
-def modify_need():
+def modify_need(need_id):
     form = ModifyNeedForm()
     project_choices = [(u.id, u.project_name) for u in Project.query.order_by('id')]
-    project_choices.append((-1, '无'))
+    project_choices.insert(0, (-1, '无'))
     application_choices = [(u.id, u.application_name) for u in Application.query.order_by('id')]
-    application_choices.append((-1, '无'))
+    application_choices.insert(0, (-1, '无'))
     person_choices = [(u.id, u.user_name) for u in User.query.filter(User.enable == 1).order_by('staff_id')]
     need_choices = [(u.id, u.need_name) for u in Need.query.filter(Need.level_id == 1).all()]
     need_choices.insert(0, (-1, '无'))
@@ -288,9 +278,8 @@ def modify_need():
     form.application_id.choices = application_choices
     form.parent_need_id.choices = need_choices
 
-    needs = db.engine.execute(SQL['NEED_LIST_DESC'])
     if form.validate_on_submit():
-        if g.user.role == 0 or g.user.id == form.create_person_id.data:
+        if g.user.role == 0 or g.user.id == form.create_person_id.data or g.user.id == form.charge_person_id.data:
             try:
                 auto_level_id = 2
                 if form.parent_need_id.data == -1:
@@ -314,12 +303,30 @@ def modify_need():
                 db.session.commit()
                 log('need', '修改需求', request.form['need_id'], request.form['need_name'], '成功')
                 flash("需求修改成功!")
+                return redirect(url_for('needs'))
             except Exception, e:
                 flash("需求修改失败!")
                 print Exception, e
         else:
             flash("权限不足!只有需求创建人拥有修改权限!")
-    return render_template("modify-need.html", form=form, init_list=needs)
+    else:
+        need = db.session.query(Need).filter(Need.id == need_id).first()
+        form.need_name.data = need.need_name
+        form.status.data = need.status
+        form.outer_sponsor.data = need.outer_sponsor
+        form.inner_sponsor.data = need.inner_sponsor
+        form.itsm_id.data = need.itsm_id
+        form.need_desc.data = need.need_desc
+        form.work_load.data = need.work_load
+        form.project_id.data = need.project_id
+        form.application_id.data = need.application_id
+        form.charge_person_id.data = need.charge_person_id
+        form.plan_commit_time.data = str(need.plan_commit_time)
+        form.real_commit_time.data = nvl(need.real_commit_time)
+        form.parent_need_id.data = need.parent_need_id
+        form.create_person_id.data = need.create_person_id
+        form.need_id.data = need_id
+    return render_template("modify-need.html", form=form)
 
 
 @app.route('/_get_need_info')
@@ -328,35 +335,6 @@ def _get_need_info():
     need_name = request.args.get('need_name', "hello", type=str)
     need_info = Need.query.filter_by(need_name=need_name).first().to_json()
     return jsonify(result=need_info)
-
-
-@app.route('/_get_need_list')
-@login_required
-def _get_need_list():
-    key_word = request.args.get('key_word', "", type=str)
-    sql = SQL['NEED_LIST_BY_KEYWORD'].format(key_word)
-    needs = db.engine.execute(sql)
-    json_str = []
-    for n in needs:
-        s = "{"
-        s += "need_name:'{0}',need_desc:'{1}'".format(n.need_name, n.need_desc)
-        s += "}"
-        json_str.append(s)
-    result = "{needs:[" + ','.join(json_str) + "]}"
-    return jsonify(result=result)
-
-
-@app.route('/_get_need_detail')
-@login_required
-def _get_need_detail():
-    id = request.args.get('need_id', -1, type=int)
-    sql = SQL['NEED_DETAIL'].format(id)
-    detail = db.engine.execute(sql)
-    for n in detail:
-        result = {'id': n[0], 'need_name': n[1], 'need_desc': n[2], 'project_name': n[3], 'application_name': n[4],
-                  'create_person_name': n[5], 'work_load': n[6]}
-        break
-    return jsonify(result=result)
 
 
 @app.route('/plan')
@@ -971,7 +949,7 @@ def _modify_password():
     old_pwd = req_data['old_pwd']
     new_pwd = req_data['new_pwd']
     try:
-        user = db.session.query(User).filter(User.id==g.user.id, User.password == old_pwd).first()
+        user = db.session.query(User).filter(User.id == g.user.id, User.password == old_pwd).first()
         if user is None:
             return '密码错误!'
         db.session.query(User).filter(User.id == int(g.user.id)).update({'password': new_pwd},
@@ -982,3 +960,42 @@ def _modify_password():
     except Exception, e:
         print Exception, e
         return '数据库服务异常!'
+
+
+@app.route('/_get_need_list')
+@login_required
+def _get_need_list():
+    order = request.args.get('order')
+    limit = request.args.get('limit')
+    offset = request.args.get('offset')
+    keyword = request.args.get('keyword')
+    project_id = request.args.get('project_id')
+    application_id = request.args.get('application_id')
+    status = request.args.get('status')
+    dive_id = request.args.get('dive_id')
+
+    total_sql = SQL['NEED_TOTAL'].format(keyword, project_id, application_id, status, dive_id)
+    total_result = db.engine.execute(total_sql).first()['total']
+    list_sql = SQL["NEED_LIST"].format(keyword, project_id, application_id, status, int(offset) * int(limit), limit,
+                                       order, dive_id)
+    list_result = db.engine.execute(list_sql)
+    o = []
+    for i in list_result:
+        row = {
+            "id": i[0],
+            "need_name": i[1],
+            "sponsor": i[2],
+            "itsm_id": i[3],
+            "work_load": i[4],
+            "charge_person_name": i[5],
+            "create_time": i[6][:10],
+            "plan_commit_time": i[7],
+            "real_commit_time": i[8],
+            "status": NEED_STATUS_DICT[i[9]],
+            "project_name": i[10],
+            "application_name": i[11],
+            "need_desc": i[12],
+            "sons": i[13]
+        }
+        o.append(row)
+    return jsonify(total=total_result, rows=o)
