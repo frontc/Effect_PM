@@ -10,15 +10,15 @@
     <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <script type=text/javascript>
         var $SCRIPT_ROOT = {{request.script_root|tojson|safe}};
-        function showMessage(msg,level,position){
-            var msg_html = '<div class="alert alert-'+level+'">'+
-            '<button type="button" class="close" data-dismiss="alert">&times;</button>'+ msg+'</div>';
-            if(position){
-                $('#'+position).append(msg_html);
-            }else{
+        function showMessage(msg, level, position) {
+            var msg_html = '<div class="alert alert-' + level + '">' +
+                    '<button type="button" class="close" data-dismiss="alert">&times;</button>' + msg + '</div>';
+            if (position) {
+                $('#' + position).append(msg_html);
+            } else {
                 $('#blackboard').append(msg_html);
             }
-        };
+        }
     </script>
 {% endblock %}
 {% block navbar %}
@@ -35,11 +35,11 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a href="/needs">需求</a></li>
-                    <li><a href="/plan">计划</a></li>
-                    <li><a href="/experience">经验</a></li>
-                    <li><a href="/worklog">日志</a></li>
-                    <li class="dropdown">
+                    <li id="base_need_li"><a href="/needs">需求</a></li>
+                    <li id="base_plan_li"><a href="/plan">计划</a></li>
+                    <li id="base_exp_li"><a href="/experience">经验</a></li>
+                    <li id="base_worklog_li"><a href="/worklog">日志</a></li>
+                    <li class="dropdown" id="base_more_li">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
                            aria-expanded="false">更多<span class="caret"></span></a>
                         <ul class="dropdown-menu">
@@ -59,16 +59,16 @@
 
 {% block content %}
     <div class="container">
-    <div id="blackboard">
-    {% for message in get_flashed_messages() %}
-        <div class="alert alert-warning">
-            <button type="button" class="close" data-dismiss="alert">
-                &times;
-            </button>
-            {{ message }}
+        <div id="blackboard">
+            {% for message in get_flashed_messages() %}
+                <div class="alert alert-warning">
+                    <button type="button" class="close" data-dismiss="alert">
+                        &times;
+                    </button>
+                    {{ message }}
+                </div>
+            {% endfor %}
         </div>
-    {% endfor %}
-    </div>
         {% block page_content %}
         {% endblock %}
     </div>
@@ -101,7 +101,8 @@
                     <p>
                         <mark>补充</mark>
                         <br>
-                        <small>本项目源码通过github开源,请<a href="https://github.com/frontc/Effect_PM" target="_blank">点击</a></small>
+                        <small>本项目源码通过github开源,请<a href="https://github.com/frontc/Effect_PM" target="_blank">点击</a>
+                        </small>
                         <br>
                         <small class="pull-right"><em>-方超 2016-06-30</em></small>
                     </p>

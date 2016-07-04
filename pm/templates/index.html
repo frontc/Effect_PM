@@ -6,6 +6,12 @@
     <script src="{{ url_for('static',filename='bootstrap-datetimepicker.zh-CN.js') }}" charset="UTF-8"></script>
     <script type="text/javascript">
         $(document).ready(function () {
+            $('#base_exp_li').removeClass('active');
+            $('#base_need_li').removeClass('active');
+            $('#base_more_li').removeClass('active');
+            $('#base_plan_li').removeClass('active');
+            $('#base_worklog_li').removeClass('active');
+
             $(".form_datetime").datetimepicker({
                 format: 'yyyy-mm-dd',
                 minView: 2,

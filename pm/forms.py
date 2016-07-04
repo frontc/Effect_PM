@@ -55,8 +55,8 @@ def check_itsm(form, field):
 
 
 class LoginForm(Form):
-    staff_id = StringField('工号', validators=[DataRequired()])
-    password = PasswordField("密码", validators=[DataRequired()])
+    staff_id = StringField('工号', validators=[DataRequired()], render_kw={'placeholder': '工号'})
+    password = PasswordField("密码", validators=[DataRequired()], render_kw={'placeholder': '密码'})
     submit = SubmitField("登录")
 
 

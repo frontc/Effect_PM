@@ -3,6 +3,13 @@
 
 {% block page_content %}
     <div class="container">
-{{ wtf.quick_form(form) }}
+        <div class="panel panel-default center-block" style="max-width: 350px;margin-top: 40px">
+            <div class="panel-heading">请登录</div>
+            <div class="panel-body">
+                    {{ wtf.quick_form(form) }}
+            </div>
+            <div class="panel-footer text-right"><small>*推荐使用chrome浏览器</small></div>
+        </div>
+
     </div>
 {% endblock %}

@@ -9,6 +9,11 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/locale/bootstrap-table-zh-CN.min.js"></script>
     <script type="text/javascript">
         $(document).ready(function () {
+            $('#base_exp_li').removeClass('active');
+            $('#base_need_li').addClass('active');
+            $('#base_more_li').removeClass('active');
+            $('#base_plan_li').removeClass('active');
+            $('#base_worklog_li').removeClass('active');
             var select_project = $('#select_project');
             var select_application = $('#select_application');
             var select_status = $('#select_status');
