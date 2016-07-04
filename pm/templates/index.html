@@ -174,6 +174,7 @@
             });
             function getExperience(lines) {
                 $.post($SCRIPT_ROOT + "/_get_experience", JSON.stringify({limits: lines}), function (data) {
+                    $('#share_content').html('');
                     for(var o in data.result){
                         var str='<div class="row"><div class="col-sm-8 small pull-left">';
                         if(data.result[o]['type']==1){
@@ -313,17 +314,17 @@
                     <form class="form-horizontal small">
                         <div class="form-group">
                             <label class="col-sm-2 control-label">标题</label>
-                            <div class="col-sm-9"><input type="text" class="form-control" id="shareTitle"></div>
+                            <div class="col-sm-9"><input type="text" class="form-control" id="shareTitle" placeholder="必填"></div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label">简介</label>
                             <div class="col-sm-9">
-                                <textarea class="form-control" rows="2" id="shareSummary"></textarea>
+                                <textarea class="form-control" rows="2" id="shareSummary" placeholder="必填"></textarea>
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label">链接</label>
-                            <div class="col-sm-9"><input type="text" class="form-control" id="shareUrl"></div>
+                            <div class="col-sm-9"><input type="text" class="form-control" id="shareUrl" placeholder="必填"></div>
                         </div>
                     </form>
                 </div>

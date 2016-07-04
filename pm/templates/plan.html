@@ -10,6 +10,10 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+            });
+
             $(".form_datetime").datetimepicker({
                 format: 'yyyy-mm-dd',
                 minView: 2,
@@ -64,10 +68,34 @@
                     {data: 'task_name', type: 'text', readOnly: true},
                     {data: 'task_detail', type: 'text', validator: lengthValidator, readOnly: true},
                     {data: 'charge_person_name', type: 'dropdown', source: user, allowInvalid: false, readOnly: true},
-                    {data: 'plan_start_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
-                    {data: 'plan_finish_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
-                    {data: 'real_start_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
-                    {data: 'real_finish_time', type: 'date', dateFormat: 'YYYY-MM-DD', allowInvalid: false, readOnly: true},
+                    {
+                        data: 'plan_start_time',
+                        type: 'date',
+                        dateFormat: 'YYYY-MM-DD',
+                        allowInvalid: false,
+                        readOnly: true
+                    },
+                    {
+                        data: 'plan_finish_time',
+                        type: 'date',
+                        dateFormat: 'YYYY-MM-DD',
+                        allowInvalid: false,
+                        readOnly: true
+                    },
+                    {
+                        data: 'real_start_time',
+                        type: 'date',
+                        dateFormat: 'YYYY-MM-DD',
+                        allowInvalid: false,
+                        readOnly: true
+                    },
+                    {
+                        data: 'real_finish_time',
+                        type: 'date',
+                        dateFormat: 'YYYY-MM-DD',
+                        allowInvalid: false,
+                        readOnly: true
+                    },
                     {data: 'processing_progress', type: 'numeric', format: '0%', readOnly: true},
                     {data: 'status', type: 'dropdown', source: status, allowInvalid: false, readOnly: true},
                     {data: 'comment', type: 'text', readOnly: true},
@@ -132,24 +160,54 @@
                             {data: 'need_name', type: 'dropdown', source: need, allowInvalid: false}
                         ]
                     });
-                }else{
+                } else {
                     hot.updateSettings({
-                columns: [
-                    {data: 'id', type: 'text', readOnly: true},
-                    {data: 'stage_name', type: 'text', readOnly: true},
-                    {data: 'task_name', type: 'text', readOnly: true},
-                    {data: 'task_detail', type: 'text', validator: lengthValidator, readOnly: true},
-                    {data: 'charge_person_name', type: 'dropdown', source: user, allowInvalid: false, readOnly: true},
-                    {data: 'plan_start_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
-                    {data: 'plan_finish_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
-                    {data: 'real_start_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
-                    {data: 'real_finish_time',type: 'date',dateFormat: 'YYYY-MM-DD',allowInvalid: false,readOnly: true},
-                    {data: 'processing_progress', type: 'numeric', format: '0%', readOnly: true},
-                    {data: 'status', type: 'dropdown', source: status, allowInvalid: false, readOnly: true},
-                    {data: 'comment', type: 'text', readOnly: true},
-                    {data: 'need_name', type: 'dropdown', source: need, allowInvalid: false, readOnly: true}
-                ]
-            });
+                        columns: [
+                            {data: 'id', type: 'text', readOnly: true},
+                            {data: 'stage_name', type: 'text', readOnly: true},
+                            {data: 'task_name', type: 'text', readOnly: true},
+                            {data: 'task_detail', type: 'text', validator: lengthValidator, readOnly: true},
+                            {
+                                data: 'charge_person_name',
+                                type: 'dropdown',
+                                source: user,
+                                allowInvalid: false,
+                                readOnly: true
+                            },
+                            {
+                                data: 'plan_start_time',
+                                type: 'date',
+                                dateFormat: 'YYYY-MM-DD',
+                                allowInvalid: false,
+                                readOnly: true
+                            },
+                            {
+                                data: 'plan_finish_time',
+                                type: 'date',
+                                dateFormat: 'YYYY-MM-DD',
+                                allowInvalid: false,
+                                readOnly: true
+                            },
+                            {
+                                data: 'real_start_time',
+                                type: 'date',
+                                dateFormat: 'YYYY-MM-DD',
+                                allowInvalid: false,
+                                readOnly: true
+                            },
+                            {
+                                data: 'real_finish_time',
+                                type: 'date',
+                                dateFormat: 'YYYY-MM-DD',
+                                allowInvalid: false,
+                                readOnly: true
+                            },
+                            {data: 'processing_progress', type: 'numeric', format: '0%', readOnly: true},
+                            {data: 'status', type: 'dropdown', source: status, allowInvalid: false, readOnly: true},
+                            {data: 'comment', type: 'text', readOnly: true},
+                            {data: 'need_name', type: 'dropdown', source: need, allowInvalid: false, readOnly: true}
+                        ]
+                    });
                 }
                 refresh_plan();
             });
@@ -160,9 +218,12 @@
     <div class="row">
         <div class="col-md-2">
             <button class="btn btn-default btn-sm" id="upload"><span class="glyphicon glyphicon-cloud-upload"
-                                                                     aria-hidden="true"></span></button>
+                                                                     aria-hidden="true" data-toggle="tooltip"
+                                                                     data-placement="top" title="上传"></span></button>
             <button class="btn btn-default btn-sm" id="download"><span class="glyphicon glyphicon-cloud-download"
-                                                                       aria-hidden="true"></span></button>
+                                                                       aria-hidden="true" data-toggle="tooltip"
+                                                                       data-placement="top" title="下载"></span>
+            </button>
         </div>
         <div class="col-md-10">
             <form class="form-inline small">

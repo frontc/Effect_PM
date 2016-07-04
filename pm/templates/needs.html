@@ -150,7 +150,7 @@
                 var ids = $.map($('#table').bootstrapTable('getSelections'), function (row) {
                     return row.id
                 });
-                var url ="{{ url_for('modify_need',need_id=-1) }}";
+                var url = "{{ url_for('modify_need',need_id=-1) }}";
                 location.href = url.replace('-1', ids)
             });
 
@@ -161,7 +161,7 @@
             });
 
             $('#new').click(function () {
-               location.href="{{ url_for('add_need') }}";
+                location.href = "{{ url_for('add_need') }}";
             });
 
             $('#project_ul').on('click', 'li', function () {
@@ -185,7 +185,7 @@
 {% endblock %}
 {% block page_content %}
     <div id="toolbar">
-    <button class="btn btn-default btn-sm hidden" id="back"><a href="#">
+        <button class="btn btn-default btn-sm hidden" id="back"><a href="#">
             <span class="glyphicon glyphicon-menu-left" aria-hidden="true" data-toggle="tooltip" data-placement="top"
                   title="返回"></span></a>
         </button>
@@ -203,8 +203,9 @@
             </button>
             <ul class="dropdown-menu" id="project_ul">
                 <li value="-1"><a href="#">选择项目</a></li>
-                <li value="1"><a href="#">安徽电信客户视图三期</a></li>
-                <li value="2"><a href="#">安徽电信大数据应用七期</a></li>
+                {% for foo in project_choices %}
+                    <li value="{{ foo[0] }}"><a href="#">{{ foo[1] }}</a></li>
+                {% endfor %}
             </ul>
         </div>
         <div class="btn-group btn-group-sm">
@@ -214,8 +215,9 @@
             </button>
             <ul class="dropdown-menu" id="application_ul">
                 <li value="-1"><a href="#">选择系统</a></li>
-                <li value="1"><a href="#">区域洞察</a></li>
-                <li value="2"><a href="#">营销视图</a></li>
+                {% for foo in application_choices %}
+                    <li value="{{ foo[0] }}"><a href="#">{{ foo[1] }}</a></li>
+                {% endfor %}
             </ul>
         </div>
         <div class="btn-group btn-group-sm">
@@ -224,11 +226,12 @@
             </button>
             <ul class="dropdown-menu" id="status_ul">
                 <li value="-1"><a href="#">需求状态</a></li>
-                <li value="1"><a href="#">待对接</a></li>
-                <li value="2"><a href="#">待分析</a></li>
+                {% for foo in status_choices %}
+                    <li value="{{ foo[0] }}"><a href="#">{{ foo[1] }}</a></li>
+                {% endfor %}
             </ul>
         </div>
-        <input type="text" class="input-sm" placeholder="需求关键词" id="keyword">
+        <input type="text" class="input-sm" placeholder="需求、描述 检索" id="keyword">
         <button class="btn btn-default btn-sm" id="refresh">
             <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top"
                   title="搜索"></span>

@@ -271,7 +271,7 @@ class Experience(db.Model):
     id = db.Column(INTEGER, autoincrement=True, primary_key=True)
     title = db.Column(VARCHAR(50), nullable=False)
     summary = db.Column(VARCHAR(200), nullable=False)
-    url = db.Column(VARCHAR(100))
+    url = db.Column(VARCHAR(300))
     type = db.Column(INTEGER, nullable=False)
     related_project_id = db.Column(INTEGER)
     related_application_id = db.Column(INTEGER)

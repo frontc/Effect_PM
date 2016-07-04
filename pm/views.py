@@ -75,7 +75,10 @@ def logout():
 @app.route("/needs")
 @login_required
 def needs():
-    return render_template('needs.html')
+    project_choices = [(p.id, p.project_name) for p in Project.query.order_by('id')]
+    application_choices = [(p.id, p.application_name) for p in Application.query.order_by('id')]
+    status_choices = NEED_STATUS_LIST
+    return render_template('needs.html',project_choices=project_choices,application_choices=application_choices,status_choices=status_choices)
 
 
 @app.route("/address")
@@ -234,8 +237,6 @@ def add_need():
     form.application_id.choices = application_choices
     form.parent_need_id.choices = need_choices
     if form.validate_on_submit():
-        print form.outer_sponsor.data
-        print form.inner_sponsor.data
         auto_level_id = 2
         if form.parent_need_id.data == -1:
             auto_level_id = 1
@@ -254,7 +255,7 @@ def add_need():
                             form.status.data,
                             form.parent_need_id.data,
                             auto_level_id,
-                            form.work_load.data.strip())
+                            form.work_load.data)
             db.session.add(new_need)
             db.session.commit()
             log('need', '增加需求', new_need.id, new_need.need_name, '成功')
@@ -494,7 +495,7 @@ def _download_task():
 @login_required
 def download(file_name):
     file_name = str(file_name) + '.xls'
-    return send_from_directory(app.config['DOWNLOAD_DIRECTORY'], file_name, as_attachment=True)
+    return send_from_directory(DOWNLOAD_DIRECTORY, file_name, as_attachment=True)
 
 
 @app.route('/_clean', methods=['POST'])
@@ -762,15 +763,13 @@ def modify_experience(exp_id):
 def _modify_experience():
     req_data = json.loads(request.get_data())
     id = req_data['id']
-    title = req_data['title'].encode('utf8')
-    summary = req_data['summary'].encode('utf8')
+    title = nvl(req_data['title']).encode('utf8')
+    summary = nvl(req_data['summary']).encode('utf8')
     experience_type = req_data['type'].encode('utf8')
-    url = req_data['url'].encode('utf8')
-    project = req_data['project'].encode('utf8')
-    application = req_data['application'].encode('utf8')
-    print type(req_data['markupStr'])
-    print req_data['markupStr']
-    detail = req_data['markupStr'].encode('utf8')
+    url = nvl(req_data['url']).encode('utf8')
+    project = nvl(req_data['project']).encode('utf8')
+    application = nvl(req_data['application']).encode('utf8')
+    detail = nvl(req_data['markupStr']).encode('utf8')
     print detail
     if len(detail) < 13:
         detail = None

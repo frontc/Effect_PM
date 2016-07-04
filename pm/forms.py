@@ -98,7 +98,7 @@ class ModifyNeedForm(Form):
     inner_sponsor = StringField("内部发起人", [check_sponsor], render_kw={'placeholder': '内外部发起人不能同时为空'})
     itsm_id = StringField("ITSM单号", [check_itsm])
     need_desc = TextAreaField("需求描述")
-    work_load = StringField("工作量(人日)", render_kw={'placeholder': '必填'})
+    work_load = IntegerField("工作量(人日)", render_kw={'placeholder': '必填'})
     project_id = SelectField("所属项目", coerce=int, choices=[])
     application_id = SelectField("所属系统", coerce=int, choices=[])
     charge_person_id = SelectField("需求负责人", coerce=int, choices=[])
