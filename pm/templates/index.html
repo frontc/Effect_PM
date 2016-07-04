@@ -42,9 +42,9 @@
                     var vYear = d.getFullYear();
                     var vMon = d.getMonth() + 1;
                     var vDay = d.getDate();
-                    var clientDate = vYear+'-'+(vMon<10 ? "0" + vMon : vMon)+'-'+(vDay<10 ? "0"+ vDay : vDay);
+                    var clientDate = vYear + '-' + (vMon < 10 ? "0" + vMon : vMon) + '-' + (vDay < 10 ? "0" + vDay : vDay);
                     for (var loop in todos) {
-                        var trStyle='';
+                        var trStyle = '';
                         //if(todos[loop]['plan_finish_time']>clientDate){
                         //    trStyle='class="text-info"';
                         //}else if(todos[loop]['plan_finish_time']==clientDate){
@@ -53,7 +53,7 @@
                         //    trStyle='class="text-danger"';
                         //}
                         todotable = todotable +
-                                "<tr id='" + todos[loop]['id'] + "' "+trStyle+ ">" +
+                                "<tr id='" + todos[loop]['id'] + "' " + trStyle + ">" +
                                 "<td><input type='checkbox'  data-toggle='modal' data-target='#myModal' data='" + loop + "'></td>" +
                                 "<td>" + todos[loop]['stage_name'] + " " + todos[loop]['task_name'] + " " + todos[loop]['task_detail'] + "</td>" +
                                 "<td>" + todos[loop]['plan_start_time'] + " ~ " + todos[loop]['plan_finish_time'] + "</td>" +
@@ -163,14 +163,29 @@
             });
 
             $('#shareSubmitButton').on('click', function () {
+                var title = $.trim($('#shareTitle').val());
+                var summary = $.trim($('#shareSummary').val());
+                var url = $.trim($('#shareUrl').val());
+                if(!title){
+                    showMessage('标题不能为空!','danger','shareMsgDiv');
+                    $('#shareTitleInput').addClass('has-error');
+                    return;
+                }
+                if(!summary){
+                    showMessage('简介不能为空!','danger','shareMsgDiv');
+                    $('#sharesummaryinput').addClass('has-error');
+                    return;
+                }
                 $.post($SCRIPT_ROOT + '/_quick_add_share',
                         JSON.stringify({
-                            title: $('#shareTitle').val(),
-                            summary: $('#shareSummary').val(),
-                            url: $('#shareUrl').val()
+                            title: title,
+                            summary: summary,
+                            url: url
                         }), function (data) {
                             if (data == 'ok') {
                                 $('#shareModal').modal('hide');
+                                $('#shareTitleInput').removeClass('has-error');
+                                $('#sharesummaryinput').removeClass('has-error');
                             }
                             getExperience(12);
                         });
@@ -181,20 +196,21 @@
             function getExperience(lines) {
                 $.post($SCRIPT_ROOT + "/_get_experience", JSON.stringify({limits: lines}), function (data) {
                     $('#share_content').html('');
-                    for(var o in data.result){
-                        var str='<div class="row"><div class="col-sm-8 small pull-left">';
-                        if(data.result[o]['type']==1){
+                    for (var o in data.result) {
+                        var str = '<div class="row"><div class="col-sm-8 small pull-left">';
+                        if (data.result[o]['type'] == 1) {
                             str = str + '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>';
-                        }else{
+                        } else {
                             str = str + '<span class="glyphicon glyphicon-grain" aria-hidden="true"></span>';
                         }
-                        str = str + '&nbsp;<a href="'+data.result[o]['url']+'" target="_blank">'+data.result[o]['title']+'</a> </div>';
-                        str = str + '<div class="col-sm-4 small pull-right"><em>- '+data.result[o]['user']+' '+data.result[o]['modify_time'];
+                        str = str + '&nbsp;<a href="' + data.result[o]['url'] + '" target="_blank">' + data.result[o]['title'] + '</a> </div>';
+                        str = str + '<div class="col-sm-4 small pull-right"><em>- ' + data.result[o]['user'] + ' ' + data.result[o]['modify_time'];
                         str = str + '</em></div><div class="col-sm-4 small pull-right"></div></div>'
                         $('#share_content').append(str);
                     }
                 });
             }
+
             getExperience(12);
         })
     </script>
@@ -317,20 +333,23 @@
                     <h4 class="modal-title" id="shareModalTitle">快速分享</h4>
                 </div>
                 <div class="modal-body">
+                    <div id="shareMsgDiv"></div>
                     <form class="form-horizontal small">
                         <div class="form-group">
                             <label class="col-sm-2 control-label">标题</label>
-                            <div class="col-sm-9"><input type="text" class="form-control" id="shareTitle" placeholder="必填"></div>
+                            <div class="col-sm-9" id="shareTitleInput"><input type="text" class="form-control" id="shareTitle"
+                                                         placeholder="必填"></div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label">简介</label>
-                            <div class="col-sm-9">
+                            <div class="col-sm-9"  id="shareSummaryInput">
                                 <textarea class="form-control" rows="2" id="shareSummary" placeholder="必填"></textarea>
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label">链接</label>
-                            <div class="col-sm-9"><input type="text" class="form-control" id="shareUrl" placeholder="必填"></div>
+                            <div class="col-sm-9"  id="shareUrlInput"><input type="text" class="form-control" id="shareUrl"
+                                                         placeholder="如:www.zhihu.com"></div>
                         </div>
                     </form>
                 </div>
