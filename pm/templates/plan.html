@@ -64,7 +64,7 @@
                 data: data,
                 contextMenu: true,
                 startRows: 20,
-                colHeaders: ['ID', '阶段', '工作项', '任务明细', '负责人', '预计开始时间', '预计结束时间', '实际开始时间', '实际结束时间', '进度', '状态', '备注', '需求名称'],
+                colHeaders: ['ID', '阶段*', '工作项*', '任务明细*', '负责人*', '预计开始时间*', '预计结束时间*', '实际开始时间', '实际结束时间', '进度*', '状态*', '备注', '需求名称*'],
                 minSpareRows: 1,
                 autoColumnSize: true,
                 columns: [
@@ -258,7 +258,7 @@
             </form>
         </div>
     </div><br>
-    <pre id="data_console" class="console">选择具体项目/系统/人员,可修改任务;点击上传按钮,提交修改</pre>
+    <pre id="data_console" class="console">选择具体项目/系统/人员,可修改任务; 点击上传按钮,提交修改; *号为必填项;</pre>
     <div id="data_div" class="small"></div>
 
 {% endblock %}
