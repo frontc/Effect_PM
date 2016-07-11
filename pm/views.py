@@ -78,7 +78,8 @@ def needs():
     project_choices = [(p.id, p.project_name) for p in Project.query.order_by('id')]
     application_choices = [(p.id, p.application_name) for p in Application.query.order_by('id')]
     status_choices = NEED_STATUS_LIST
-    return render_template('needs.html',project_choices=project_choices,application_choices=application_choices,status_choices=status_choices)
+    return render_template('needs.html', project_choices=project_choices, application_choices=application_choices,
+                           status_choices=status_choices)
 
 
 @app.route("/address")
@@ -284,7 +285,8 @@ def modify_need(need_id):
     form.parent_need_id.choices = need_choices
 
     if form.validate_on_submit():
-        if g.user.role == 0 or g.user.id == form.create_person_id.data or g.user.id == form.charge_person_id.data:
+        if g.user.role == 0 or g.user.id == int(form.create_person_id.data) or g.user.id == int(
+                form.charge_person_id.data):
             try:
                 auto_level_id = 2
                 if form.parent_need_id.data == -1:
