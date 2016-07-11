@@ -44,8 +44,9 @@ def check_sponsor(form, field):
 
 
 def check_itsm(form, field):
+    if len(field.data.strip()) == 0:
+        return True
     need = Need.query.filter_by(itsm_id=field.data.strip()).first()
-
     if isinstance(form, ModifyNeedForm):
         if need is not None and need.id != int(form.need_id.data):
             raise StopValidation('该需求已存在!')
