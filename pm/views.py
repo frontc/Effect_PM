@@ -9,7 +9,7 @@ from models import User, Project, Application, Need, Task, Experience
 from sql import SQL
 from tool import nvl, join, genxls, clean, log
 from forms import LoginForm, ProjectForm, ApplicationForm, NeedForm, ModifyNeedForm
-from flask.ext.login import login_user, current_user, login_required, logout_user
+from flask_login import login_user, current_user, login_required, logout_user
 import json, time
 from pm.const import *
 
